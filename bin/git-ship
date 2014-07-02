@@ -1,0 +1,24 @@
+#!/usr/bin/env perl
+use Applify;
+
+documentation 'App::git::ship::Manual';
+extends 'App::git::ship';
+
+app {
+  my $self = shift;
+  my $action = shift || 'ship';
+
+  die "git-ship: Are you in the project root? ./.git was not found\n" unless -d '.git';
+
+  eval {
+    $self->config unless $action eq 'init';
+    bless $self, $self->detect($action eq 'init' ? 0 : 1);
+    1;
+  } or do {
+    die "You need to run '$0 init' first\n";
+  };
+
+  $self->$action(@_);
+
+  return 0;
+};
