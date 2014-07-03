@@ -384,6 +384,20 @@ sub _generate_gitignore {
 
   open my $GITIGNORE, '>', '.gitignore' or $self->abort("git-ship: Read .gitignore: $!");
   print $GITIGNORE <<'GITIGNORE';
+~$
+*.old
+*.swp
+/blib/
+/cover_db
+/inc/
+/local
+/Makefile
+/Makefile.old
+/MANIFEST
+/MANIFEST.bak
+/META*
+/MYMETA*
+/pm_to_blib
 GITIGNORE
 }
 
