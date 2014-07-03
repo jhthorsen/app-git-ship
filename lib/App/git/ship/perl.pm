@@ -14,7 +14,8 @@ See L<App::git::ship/SYNOPSIS>
 
 use App::git::ship -base;
 use Cwd ();
-use File::Basename ();
+use File::Basename qw( dirname basename );
+use File::Path 'mkpath';
 use File::Spec;
 use Module::CPANfile;
 
@@ -42,7 +43,7 @@ has main_module_path => sub {
   my $self = shift;
   return $self->config->{main_module_path} if $self->config->{main_module_path};
 
-  my @path = split /-/, File::Basename::basename(Cwd::getcwd);
+  my @path = split /-/, basename(Cwd::getcwd);
   my $path = 'lib';
   my @name;
 
@@ -115,9 +116,12 @@ See L<App::git::ship/can_handle_project>.
 =cut
 
 sub can_handle_project {
-  my ($class, $app) = @_;
+  my ($class, $file) = @_;
   my $can_handle_project = 0;
 
+  if ($file) {
+    return $file =~ /\.pm$/ ? 1 : 0;
+  }
   if (-d 'lib') {
     File::Find::find(sub { $can_handle_project = 1 if /\.pm$/; }, 'lib');
   }
@@ -162,7 +166,19 @@ Used to generate C<Changes> and C<MANIFEST.SKIP>.
 =cut
 
 sub init {
-  my $self = shift;
+  my ($self, $file) = @_;
+
+  if ($file) {
+    # start new project
+    $file = "lib/$file" unless $file =~ m!^.?lib!;
+    $self->config({})->main_module_path($file);
+    my $work_dir = lc($self->project_name) =~ s!::!-!gr;
+    mkdir $work_dir;
+    chdir $work_dir or $self->abort("Could not chdir to $work_dir");
+    mkpath dirname $self->main_module_path;
+    open my $MAINMODULE, '>>', $self->main_module_path or $self->abort("Could not create %s", $self->main_module_path);
+    open my $CPANFILE, '>>', 'cpanfile' or $self->abort("Could not create cpanfile");
+  }
 
   symlink $self->main_module_path, 'README.pod' unless -e 'README.pod';
 
@@ -289,8 +305,10 @@ sub _generate_manifest_skip {
   return if -e 'MANIFEST.SKIP';
   open my $SKIP, '>', 'MANIFEST.SKIP' or $self->abort("Could not write to ./MANIFEST.SKIP: $!");
   print $SKIP <<'MANIFEST_SKIP';
-.git
+\.bak
+\.git
 \.old
+\.ship\.config
 \.swp
 ~$
 ^blib/

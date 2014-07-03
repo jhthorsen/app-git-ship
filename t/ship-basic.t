@@ -13,7 +13,7 @@ my $app = App::git::ship->new;
 }
 
 {
-  ok $app->can_handle_project($app), 'App::git::ship can handle any git project';
+  ok $app->can_handle_project, 'App::git::ship can handle any git project';
 }
 
 {

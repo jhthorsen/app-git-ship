@@ -4,7 +4,7 @@ use App::git::ship::perl;
 my $app = App::git::ship::perl->new;
 
 {
-  ok $app->can_handle_project($app), 'App::git::ship::perl can handle this project';
+  ok $app->can_handle_project, 'App::git::ship::perl can handle this project';
 }
 
 {
