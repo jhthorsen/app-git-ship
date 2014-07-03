@@ -102,10 +102,7 @@ sub build {
   $self->_timestamp_to_changes;
   $self->_update_version_info;
   $self->system(sprintf '%s %s > %s', 'perldoc -tT', $self->main_module_path, 'README');
-
-  -e and $self->system(qw( git add ), $_) for qw( Changes Makefile.PL README );
-  $self->system(qw( git add ), $self->main_module_path);
-  $self->system(qw( git commit -m ), $self->_changes_to_commit_message);
+  $self->system(qw( git commit -a -m ), $self->_changes_to_commit_message);
   $self->_make('manifest');
   $self->_make('dist');
   $self;
@@ -155,8 +152,7 @@ using C<cpan-uploader-http>.
 sub ship {
   my $self = shift;
   my $uploader = CPAN::Uploader->new(CPAN::Uploader->read_config_file);
-  my $name = lc($self->project_name) =~ s!::!-!gr;
-  my $dist_file = $self->_dist_files(sub { /^$name.*\.tar/i });
+  my $dist_file = $self->_dist_files(sub { 1 });
 
   unless ($dist_file) {
     $self->abort("Build process failed.") unless $self->{ship_retry}++;
@@ -197,9 +193,14 @@ sub _changes_to_commit_message {
 
 sub _dist_files {
   my ($self, $cb) = @_;
+  my $name = lc($self->project_name) =~ s!::!-!gr;
 
-  opendir(my $DH, '.');
-  $self->$cb and return $_ while readdir $DH;
+  opendir(my $DH, Cwd::getcwd);
+  while (readdir $DH) {
+    next unless /^$name.*\.tar/i;
+    return $_ if $self->$cb;
+  }
+
   return undef;
 }
 
@@ -285,14 +286,13 @@ sub _timestamp_to_changes {
   my $date = localtime;
 
   local @ARGV = qw( Changes );
-  local $^I = '.bak';
+  local $^I = '';
   while (<>) {
-    s/\n($VERSION_RE)\s*$/{ sprintf "\n%-7s  %s", $1, $date }/em or next;
-    $self->{next_version} = $1;
-    return;
+    $self->{next_version} = $1 if s/^($VERSION_RE)\s*/{ sprintf "\n%-7s  %s\n", $1, $date }/e;
+    print; # print back to same file
   }
 
-  $self->abort('Unable to add timestamp to ./Changes');
+  $self->abort('Unable to add timestamp to ./Changes') unless $self->{next_version};
 }
 
 sub _update_version_info {
@@ -300,10 +300,11 @@ sub _update_version_info {
   my $version = $self->{next_version} or $self->abort('Internal error: Are you sure Changes has a timestamp?');
 
   local @ARGV = ($self->main_module_path);
-  local $^I = '.bak';
+  local $^I = '';
   while (<>) {
-    s/=head1 VERSION.*?\n=/=head1 VERSION\n\n$version\n\n=/s;
-    s/^((?:our)?\s*\$VERSION)\s*=.*$/$1 = '$version';/m;
+    s/$VERSION_RE/$version/ if /^=head1 VERSION/ .. /^=head1/;
+    s/((?:our)?\s*\$VERSION)\s*=.*$/$1 = '$version';/;
+    print; # print back to same file
   }
 }
 

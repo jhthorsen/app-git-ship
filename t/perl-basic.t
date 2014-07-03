@@ -7,6 +7,23 @@ my $app = App::git::ship::perl->new;
   ok $app->can_handle_project($app), 'App::git::ship::perl can handle this project';
 }
 
+{
+  my $dist_file = 'App-git-SHIP.tar.gz';
+  my $found = 0;
+  is $app->project_name, 'App::git::ship', 'project_name()';
+  is $app->_dist_files(sub { $found++; return; }), undef, 'found no dist file';
+  is $found, 0, '_dist_files callback was not called';
+
+  open my $FH, '>', $dist_file or die "Write $dist_file: $!";
+  close $FH;
+  is $app->_dist_files(sub { ++$found; }), $dist_file, "found $dist_file";
+
+  $app->_dist_files(sub { ++$found; return; });
+  is $found, 2, '_dist_files callback was called once';
+
+  unlink $dist_file;
+}
+
 SKIP: {
   skip '.git is not here', 1 unless -d '.git';
 
