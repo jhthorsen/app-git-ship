@@ -181,7 +181,7 @@ sub _generate_makefile {
 
   $args->{ABSTRACT_FROM} = $self->main_module_path;
   $args->{AUTHOR} = $self->author('%an <%ae>');
-  $args->{LICENSE} = $self->config->{license_name};
+  $args->{LICENSE} = $self->config->{license};
   $args->{NAME} = $self->project_name;
   $args->{VERSION_FROM} = $self->main_module_path;
   $args->{test} = { TESTS => 't/*.t' };
@@ -190,7 +190,6 @@ sub _generate_makefile {
     resources => {
       bugtracker => $self->config->{bugtracker},
       homepage => $self->config->{homepage},
-      license => $self->config->{license_url},
       repository => $self->repository,
     },
   };

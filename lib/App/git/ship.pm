@@ -246,13 +246,11 @@ with "/issues" at the end instead.
 
 URL to the project homepage. Will be the the L</repository> URL, without ".git".
 
-=item * license_name
+=item * license
 
 The name of the license. Default to L<artistic_2|http://www.opensource.org/licenses/artistic-license-2.0>.
 
-=item * license_url
-
-The URL to the license. Default to L<http://www.opensource.org/licenses/artistic-license-2.0>.
+See L<CPAN::Meta::Spec/license> for alternatives.
 
 =back
 
@@ -383,8 +381,7 @@ sub _generate_config {
   $config .= "project_name = \n";
   $config .= "homepage = $homepage\n";
   $config .= "bugtracker = " . +(join '/', $homepage, 'issues') =~ s!(\w)//!$1/!r . "\n";
-  $config .= "license_name = artistic_2\n";
-  $config .= "license_url = http://www.opensource.org/licenses/artistic-license-2.0\n";
+  $config .= "license = artistic_2\n";
 
   open my $CFG, '>', $config_file or $self->abort("git-ship: Read $config_file: $!");
   print $CFG $config;

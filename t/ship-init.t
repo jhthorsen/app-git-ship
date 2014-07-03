@@ -12,8 +12,7 @@ my $app = App::git::ship->new;
   $app->init;
   is $app->config->{bugtracker}, 'https://github.com/Nordaaker/convos/issues', 'bugtracker is set up';
   is $app->config->{homepage}, 'https://github.com/Nordaaker/convos', 'homepage is set up';
-  is $app->config->{license_name}, 'artistic_2', 'license_name is set up';
-  is $app->config->{license_url}, 'http://www.opensource.org/licenses/artistic-license-2.0', 'license_url is set up';
+  is $app->config->{license}, 'artistic_2', 'license_name is set up';
 }
 
 done_testing;

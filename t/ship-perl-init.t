@@ -1,7 +1,7 @@
 use Test::More;
 use App::git::ship::perl;
 
-plan skip_all => 'Cannot test unless linux' unless $^O = 'linux';
+plan skip_all => 'Cannot test unless linux' unless $^O eq 'linux';
 
 mkdir 'dummy-project';
 chdir 'dummy-project' or plan skip_all => 'Could not chdir to test-repo';
