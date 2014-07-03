@@ -402,6 +402,25 @@ sub _generate_gitignore {
 GITIGNORE
 }
 
+=head1 SEE ALSO
+
+=over
+
+=item * L<Dist::Zilla>
+
+This project can probably get you to the moon.
+
+=item * L<Minilla>
+
+This looks really nice for shipping your project. It has the same idea as
+this distribution: Guess as much as possible.
+
+=item * L<Shipit>
+
+One magical tool for doing it all in one bang.
+
+=back
+
 =head1 COPYRIGHT AND LICENSE
 
 Copyright (C) 2014, Jan Henning Thorsen
