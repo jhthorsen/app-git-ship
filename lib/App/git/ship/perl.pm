@@ -97,7 +97,7 @@ Used to build a Perl distribution.
 sub build {
   my $self = shift;
 
-  $self->_dist_files(sub { unlink $_ or $self->abort("Delete $_: $!"); return; });
+  $self->clean(0);
   $self->_generate_makefile;
   $self->_timestamp_to_changes;
   $self->_update_version_info;
@@ -123,6 +123,36 @@ sub can_handle_project {
   }
 
   return $can_handle_project;
+}
+
+=head2 clean
+
+Used to clean out build files.
+
+=cut
+
+sub clean {
+  my $self = shift;
+  my $all = shift // 1;
+  my @files = qw(
+    Makefile
+    Makefile.old
+    MANIFEST
+    MYMETA.json
+    MYMETA.yml
+  );
+
+  if ($all) {
+    push @files, qw(
+      Changes.bak
+      META.json
+      META.yml
+    );
+  }
+
+  for my $file (@files) {
+    unlink $file if -e $file;
+  }
 }
 
 =head2 init
