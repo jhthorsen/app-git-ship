@@ -88,23 +88,6 @@ has _cpanfile => sub { Module::CPANfile->load; };
 
 =head1 METHODS
 
-=head2 init
-
-Used to generate C<Changes> and C<MANIFEST.SKIP>.
-
-=cut
-
-sub init {
-  my $self = shift;
-
-  symlink $self->main_module_path, 'README.pod' unless -e 'README.pod';
-
-  $self->SUPER::init(@_);
-  $self->_generate_changes;
-  $self->_generate_manifest_skip;
-  $self;
-}
-
 =head2 build
 
 Used to build a Perl distribution.
@@ -125,6 +108,23 @@ sub build {
   $self->system(qw( git commit -m ), $self->_changes_to_commit_message);
   $self->_make('manifest');
   $self->_make('dist');
+  $self;
+}
+
+=head2 init
+
+Used to generate C<Changes> and C<MANIFEST.SKIP>.
+
+=cut
+
+sub init {
+  my $self = shift;
+
+  symlink $self->main_module_path, 'README.pod' unless -e 'README.pod';
+
+  $self->SUPER::init(@_);
+  $self->_generate_changes;
+  $self->_generate_manifest_skip;
   $self;
 }
 
@@ -150,6 +150,21 @@ sub ship {
   $self->SUPER::ship(@_);
   $uploader->upload_file($dist_file);
   $self;
+}
+
+sub _changes_to_commit_message {
+  my $self = shift;
+  my $message = '';
+  my $version;
+
+  local @ARGV = qw( Changes );
+  while (<>) {
+    $message .= $_ if /^($VERSION_RE)\s+/ .. $message && /^$VERSION_RE\s+/;
+    $version = $1 if $1;
+  }
+
+  $message =~ s!.*\n!Released version $version\n\n!;
+  $message;
 }
 
 sub _dist_files {
