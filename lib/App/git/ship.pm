@@ -45,6 +45,7 @@ use warnings;
 use Carp;
 use Data::Dumper ();
 use File::Find ();
+use File::Spec ();
 
 use constant DEBUG => $ENV{GIT_SHIP_DEBUG} || 0;
 
@@ -72,6 +73,13 @@ L</config>.
 
 Returns the URL to the first repository that point to L<github|http://github.com>.
 This attribute can be read from L</config>.
+
+=head2 silent
+
+  $bool = $self->silent;
+  $self = $self->silent($bool);
+
+Set this to true if you want less logging. By default it silent is false.
 
 =cut
 
@@ -104,8 +112,12 @@ __PACKAGE__->attr(repository => sub {
   open my $GIT, '-|', 'git remote -v | grep github' or $self->abort("git remote -v: $!");
   my $repository = readline $GIT;
   $self->abort('Could not find any repository URL to GitHub.') unless $repository;
-  return sprintf 'https://github.com/%s', +(split /[:\s+]/, $repository)[2];
+  $repository = sprintf 'https://github.com/%s', +(split /[:\s+]/, $repository)[2];
+  warn "[ship::repository] $repository\n" if DEBUG;
+  $repository;
 });
+
+__PACKAGE__->attr(silent => sub { $ENV{GIT_SHIP_SILENT} || 0 });
 
 =head1 METHODS
 
@@ -174,6 +186,7 @@ sub author {
   open my $GIT, '-|', qw( git log ), "--format=$format" or $self->abort("git log --format=$format: $!");
   my $author = readline $GIT;
   chomp $author;
+  warn "[ship::author] $format = $author\n" if DEBUG;
   return $author;
 }
 
@@ -292,6 +305,12 @@ sub system {
   my ($self, $program, @args) = @_;
   my $exit_code;
 
+  local *STDOUT = *STDOUT;
+  local *STDERR = *STDERR;
+  open STDERR, '>', File::Spec->devnull if $self->silent;
+  open STDOUT, '>', File::Spec->devnull if $self->silent;
+
+  say "\$ $program @args\n" unless $self->silent;
   system $program => @args;
   $exit_code = $? >> 8;
   $self->abort("'$program @args' failed: $exit_code") if $exit_code;
@@ -369,8 +388,11 @@ sub _generate_config {
 
   open my $CFG, '>', $config_file or $self->abort("git-ship: Read $config_file: $!");
   print $CFG $config;
-  warn "git-ship: Created config file $config_file\n\n";
-  say $config;
+
+  unless ($self->silent) {
+    warn "git-ship: Created config file $config_file\n\n";
+    say $config;
+  }
 }
 
 sub _generate_gitignore {
