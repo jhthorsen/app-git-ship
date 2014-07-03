@@ -99,7 +99,7 @@ sub build {
   my $self = shift;
 
   $self->clean(0);
-  $self->_generate_makefile;
+  $self->_render_makefile_pl;
   $self->_timestamp_to_changes;
   $self->_update_version_info;
   $self->system(sprintf '%s %s > %s', 'perldoc -tT', $self->main_module_path, 'README');
@@ -183,9 +183,9 @@ sub init {
   symlink $self->main_module_path, 'README.pod' unless -e 'README.pod';
 
   $self->SUPER::init(@_);
-  $self->_generate_basic_test;
-  $self->_generate_changes;
-  $self->_generate_manifest_skip;
+  $self->render('t/00-basic.t');
+  $self->render('Changes');
+  $self->render('MANIFEST.SKIP');
   $self;
 }
 
@@ -251,80 +251,18 @@ sub _dist_files {
   return undef;
 }
 
-sub _generate_basic_test {
-  my $self = shift;
-  my $file = File::Spec->catfile(qw( t 00-basic.t ));
+sub _make {
+  my ($self, @args) = @_;
 
-  mkdir 't' unless -d 't';
-  return if -e $file;
-  open my $TEST, '>', $file or $self->abort("Could not write to $file: $!");
-  print $TEST <<'TEST';
-use Test::More;
-use File::Find;
-
-if(($ENV{HARNESS_PERL_SWITCHES} || '') =~ /Devel::Cover/) {
-  plan skip_all => 'HARNESS_PERL_SWITCHES =~ /Devel::Cover/';
-}
-if(!eval 'use Test::Pod; 1') {
-  *Test::Pod::pod_file_ok = sub { SKIP: { skip "pod_file_ok(@_) (Test::Pod is required)", 1 } };
-}
-if(!eval 'use Test::Pod::Coverage; 1') {
-  *Test::Pod::Coverage::pod_coverage_ok = sub { SKIP: { skip "pod_coverage_ok(@_) (Test::Pod::Coverage is required)", 1 } };
+  $self->_render_makefile_pl;
+  $self->system(perl => 'Makefile.PL') unless -e 'Makefile';
+  $self->system(make => @args);
 }
 
-find(
-  {
-    wanted => sub { /\.pm$/ and push @files, $File::Find::name },
-    no_chdir => 1
-  },
-  -e 'blib' ? 'blib' : 'lib',
-);
-
-plan tests => @files * 3;
-
-for my $file (@files) {
-  my $module = $file; $module =~ s,\.pm$,,; $module =~ s,.*/?lib/,,; $module =~ s,/,::,g;
-  ok eval "use $module; 1", "use $module" or diag $@;
-  Test::Pod::pod_file_ok($file);
-  Test::Pod::Coverage::pod_coverage_ok($module);
-}
-TEST
-
-}
-
-sub _generate_changes {
-  my $self = shift;
-
-  return if -e 'Changes';
-  open my $CHANGES, '>', 'Changes' or $self->abort("Could not write to ./Changes: $!");
-  print $CHANGES <<"CHANGES";
-Changelog for @{[$self->project_name]}
-
-0.01
-       * Started project
-
-CHANGES
-}
-
-sub _generate_makefile {
+sub _render_makefile_pl {
   my $self = shift;
   my $prereqs = $self->_cpanfile->prereqs;
-  my $args = {};
-
-  $args->{ABSTRACT_FROM} = $self->main_module_path;
-  $args->{AUTHOR} = $self->_author('%an <%ae>');
-  $args->{LICENSE} = $self->config->{license};
-  $args->{NAME} = $self->project_name;
-  $args->{VERSION_FROM} = $self->main_module_path;
-  $args->{test} = { TESTS => 't/*.t' };
-
-  $args->{META_MERGE} = {
-    resources => {
-      bugtracker => $self->config->{bugtracker},
-      homepage => $self->config->{homepage},
-      repository => $self->repository,
-    },
-  };
+  my $args = { force => 1 };
 
   $args->{PREREQ_PM} = $prereqs->requirements_for(qw( runtime requires ))->as_string_hash;
 
@@ -333,42 +271,7 @@ sub _generate_makefile {
     $args->{BUILD_REQUIRES}{$_} = $r->{$_} for keys %$r;
   }
 
-  $args = Data::Dumper->new([$args])->Indent(1)->Terse(1)->Sortkeys(1)->Dump;
-  $args =~ s!{\n?!!s;
-  $args =~ s!\n?}\n?$!!s;
-
-  open my $MAKEFILE, '>', 'Makefile.PL' or $self->abort("Write Makefile.PL: $!");
-  print $MAKEFILE "use ExtUtils::MakeMaker;\nWriteMakefile(\n$args\n);\n";
-}
-
-sub _generate_manifest_skip {
-  my $self = shift;
-
-  return if -e 'MANIFEST.SKIP';
-  open my $SKIP, '>', 'MANIFEST.SKIP' or $self->abort("Could not write to ./MANIFEST.SKIP: $!");
-  print $SKIP <<'MANIFEST_SKIP';
-\.bak
-\.git
-\.old
-\.ship\.config
-\.swp
-~$
-^blib/
-^cover_db/
-^local/
-^Makefile$
-^MANIFEST.*
-^MYMETA*
-^README.pod
-MANIFEST_SKIP
-}
-
-sub _make {
-  my ($self, @args) = @_;
-
-  $self->_generate_makefile unless -e 'Makefile.PL';
-  $self->system(perl => 'Makefile.PL') unless -e 'Makefile';
-  $self->system(make => @args);
+  $self->render('Makefile.PL', $args);
 }
 
 sub _timestamp_to_changes {
@@ -412,3 +315,74 @@ Jan Henning Thorsen - C<jhthorsen@cpan.org>
 =cut
 
 1;
+
+__DATA__
+@@ Changes
+Changelog for <%= $self->project_name %>
+
+0.01
+       * Started project
+
+@@ Makefile.PL
+use ExtUtils::MakeMaker;
+WriteMakefile(
+  NAME => '<%= $_[0]->project_name %>',
+  AUTHOR => '<%= $_[0]->_author('%an <%ae>') %>',
+  LICENSE => '<%= $_[0]->config->{license} %>',
+  ABSTRACT_FROM => '<%= $_[0]->main_module_path %>',
+  VERSION_FROM => '<%= $_[0]->main_module_path %>',
+  META_MERGE => {
+    resources => {
+      bugtracker => '<%= $_[0]->config->{bugtracker} %>',
+      homepage => '<%= $_[0]->config->{homepage} %>',
+      repository => '<%= $_[0]->repository %>',
+    },
+  },
+  BUILD_REQUIRES => <%= $_[1]->{BUILD_REQUIRES} %>
+  PREREQ_PM => <%= $_[1]->{PREREQ_PM} %>
+  test => { TESTS => 't/*.t' },
+);
+@@ MANIFEST.SKIP
+\.bak
+\.git
+\.old
+\.ship\.config
+\.swp
+~$
+^blib/
+^cover_db/
+^local/
+^Makefile$
+^MANIFEST.*
+^MYMETA*
+^README.pod
+@@ t/00-basic.t
+use Test::More;
+use File::Find;
+
+if(($ENV{HARNESS_PERL_SWITCHES} || '') =~ /Devel::Cover/) {
+  plan skip_all => 'HARNESS_PERL_SWITCHES =~ /Devel::Cover/';
+}
+if(!eval 'use Test::Pod; 1') {
+  *Test::Pod::pod_file_ok = sub { SKIP: { skip "pod_file_ok(@_) (Test::Pod is required)", 1 } };
+}
+if(!eval 'use Test::Pod::Coverage; 1') {
+  *Test::Pod::Coverage::pod_coverage_ok = sub { SKIP: { skip "pod_coverage_ok(@_) (Test::Pod::Coverage is required)", 1 } };
+}
+
+find(
+  {
+    wanted => sub { /\.pm$/ and push @files, $File::Find::name },
+    no_chdir => 1
+  },
+  -e 'blib' ? 'blib' : 'lib',
+);
+
+plan tests => @files * 3;
+
+for my $file (@files) {
+  my $module = $file; $module =~ s,\.pm$,,; $module =~ s,.*/?lib/,,; $module =~ s,/,::,g;
+  ok eval "use $module; 1", "use $module" or diag $@;
+  Test::Pod::pod_file_ok($file);
+  Test::Pod::Coverage::pod_coverage_ok($module);
+}
