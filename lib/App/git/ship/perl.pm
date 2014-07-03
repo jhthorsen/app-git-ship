@@ -152,6 +152,17 @@ sub ship {
   $self;
 }
 
+sub _author {
+  my $self = shift;
+  my $format = shift || '%an';
+
+  open my $GIT, '-|', qw( git log ), "--format=$format" or $self->abort("git log --format=$format: $!");
+  my $author = readline $GIT;
+  chomp $author;
+  warn "[ship::author] $format = $author\n" if DEBUG;
+  return $author;
+}
+
 sub _changes_to_commit_message {
   my $self = shift;
   my $message = '';
@@ -195,7 +206,7 @@ sub _generate_makefile {
   my $args = {};
 
   $args->{ABSTRACT_FROM} = $self->main_module_path;
-  $args->{AUTHOR} = $self->author('%an <%ae>');
+  $args->{AUTHOR} = $self->_author('%an <%ae>');
   $args->{LICENSE} = $self->config->{license};
   $args->{NAME} = $self->project_name;
   $args->{VERSION_FROM} = $self->main_module_path;

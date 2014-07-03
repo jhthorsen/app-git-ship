@@ -12,16 +12,6 @@ my $app = App::git::ship->new;
   ok exists $app->{some_attr}, 'some_attr exists';
 }
 
-SKIP: {
-  skip '.git is not here', 1 unless -d '.git';
-
-  my $author = $app->author('%an, <%ae>');
-  like $author, qr{^[^,]+, <[^\@]+\@[^\>]+>$}, 'got author and email';
-
-  $author =~ s!,\s<.*!!;
-  is $app->author, $author, 'got author';
-}
-
 {
   eval { $app->abort("foo") };
   like $@, qr{^git-ship: foo}, 'abort foo';

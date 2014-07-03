@@ -167,29 +167,6 @@ sub attr {
   return $self;
 }
 
-=head2 author
-
-  $str = $self->author($format);
-  $str = $self->author("%an, <%ae>"); # Jan Henning Thorsen, <jhthorsen@cpan.org>
-
-Returns a string used to describe the latest author from the C<git> log.
-
- %an: author name
- %ae: author email
-
-=cut
-
-sub author {
-  my $self = shift;
-  my $format = shift || '%an';
-
-  open my $GIT, '-|', qw( git log ), "--format=$format" or $self->abort("git log --format=$format: $!");
-  my $author = readline $GIT;
-  chomp $author;
-  warn "[ship::author] $format = $author\n" if DEBUG;
-  return $author;
-}
-
 =head2 build
 
 This method builds the project. The default behavior is to L</abort>.
@@ -347,6 +324,7 @@ sub import {
     no strict 'refs';
     push @{"${caller}::ISA"}, __PACKAGE__;
     *{"${caller}::has"} = sub { attr($caller, @_) };
+    *{"${caller}::DEBUG"} = \&DEBUG;
   }
 
   feature->import(':5.10');
