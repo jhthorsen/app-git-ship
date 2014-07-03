@@ -13,6 +13,10 @@ my $app = App::git::ship->new;
 }
 
 {
+  ok $app->can_handle_project($app), 'App::git::ship can handle any git project';
+}
+
+{
   eval { $app->abort("foo") };
   like $@, qr{^git-ship: foo}, 'abort foo';
 

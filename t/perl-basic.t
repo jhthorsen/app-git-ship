@@ -3,6 +3,10 @@ use App::git::ship::perl;
 
 my $app = App::git::ship::perl->new;
 
+{
+  ok $app->can_handle_project($app), 'App::git::ship::perl can handle this project';
+}
+
 SKIP: {
   skip '.git is not here', 1 unless -d '.git';
 

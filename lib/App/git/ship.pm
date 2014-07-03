@@ -178,6 +178,19 @@ sub build {
   $_[0]->abort('build() is not available for %s', ref $_[0]);
 }
 
+=head2 can_handle_project
+
+  $bool = $class->can_handle_project($app);
+
+This method is called by L<App::git::ship/detect> and should return boolean
+true if this module can handle the given git project.
+
+This is a class method which gets an instance of L<App::git::ship> as input.
+
+=cut
+
+sub can_handle_project { return -d '.git' ? 1 : 0; }
+
 =head2 detect
 
   $class = $self->detect;
@@ -190,21 +203,24 @@ case default to L<App::git::ship>.
 
 sub detect {
   my ($self, $from_config) = @_;
-  my $class = __PACKAGE__;
 
   if ($from_config // 1 and $self->config->{class}) {
-    $class = $self->config->{class};
+    my $class = $self->config->{class};
+    eval "require $class;1" or $self->abort("Could not load $class: $@");
+    return $class;
   }
   else {
-    for my $m (qw( _detect_perl )) {
-      my $c = $self->$m or next;
-      $class = $c;
-      last;
+    require Module::Find;
+    for my $class (sort { length $b <=> length $a } Module::Find::findallmod(__PACKAGE__)) {
+      eval "require $class;1" or next;
+      next unless $class->can('can_handle_project');
+      warn "[ship::detect] $class->can_handle_project(...)\n" if DEBUG;
+      return $class if $class >can_handle_project($self);
     }
   }
 
-  eval "require $class; 1" or $self->abort("Could not load $class: $@");
-  return $class;
+  warn "[ship::detect] fallback to App::git::ship" if DEBUG;
+  return __PACKAGE__;
 }
 
 =head2 init
@@ -333,15 +349,6 @@ sub import {
 }
 
 sub _config_file { $ENV{GIT_SHIP_CONFIG} || '.ship.conf'; }
-
-sub _detect_perl {
-  my $self = shift;
-  my $class;
-
-  File::Find::find(sub { $class = 'App::git::ship::perl' if /\.pm$/; }, 'lib');
-
-  return $class;
-}
 
 sub _generate_config {
   my $self = shift;

@@ -111,6 +111,23 @@ sub build {
   $self;
 }
 
+=head2 can_handle_project
+
+See L<App::git::ship/can_handle_project>.
+
+=cut
+
+sub can_handle_project {
+  my ($class, $app) = @_;
+  my $can_handle_project = 0;
+
+  if (-d 'lib') {
+    File::Find::find(sub { $can_handle_project = 1 if /\.pm$/; }, 'lib');
+  }
+
+  return $can_handle_project;
+}
+
 =head2 init
 
 Used to generate C<Changes> and C<MANIFEST.SKIP>.
