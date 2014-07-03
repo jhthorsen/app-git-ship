@@ -177,15 +177,15 @@ sub init {
     chdir $work_dir or $self->abort("Could not chdir to $work_dir");
     mkpath dirname $self->main_module_path;
     open my $MAINMODULE, '>>', $self->main_module_path or $self->abort("Could not create %s", $self->main_module_path);
-    open my $CPANFILE, '>>', 'cpanfile' or $self->abort("Could not create cpanfile");
   }
 
   symlink $self->main_module_path, 'README.pod' unless -e 'README.pod';
 
   $self->SUPER::init(@_);
-  $self->render('t/00-basic.t');
+  $self->render('cpanfile');
   $self->render('Changes');
   $self->render('MANIFEST.SKIP');
+  $self->render('t/00-basic.t');
   $self;
 }
 
@@ -317,6 +317,10 @@ Jan Henning Thorsen - C<jhthorsen@cpan.org>
 1;
 
 __DATA__
+@@ cpanfile
+# You can install this projct with curl -L http://cpanmin.us | perl - <%= $_[0]->repository =~ s!\.git$!!r %>/archive/master.tar.gz
+requires "perl" => "5.10.0";
+test_requires "Test::More" => "0.88";
 @@ Changes
 Changelog for <%= $self->project_name %>
 
