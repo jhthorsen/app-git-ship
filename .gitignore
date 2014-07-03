@@ -4,9 +4,9 @@
 /inc/
 /pm_to_blib
 /MANIFEST
-/MANIFEST.bak
 /Makefile
 /Makefile.old
+*.bak
 *.old
 *.swp
 ~$
