@@ -1,7 +1,7 @@
 use Test::More;
 use App::git::ship;
 
-my $app = App::git::ship->new;
+my $app = App::git::ship->new(silent => 1);
 
 {
   ok !$app->can('some_attr'), 'some_attr() does not exist';
@@ -10,13 +10,8 @@ my $app = App::git::ship->new;
   ok !exists $app->{some_attr}, 'some_attr does not exist';
   is $app->some_attr, 123, 'some_attr() 123';
   ok exists $app->{some_attr}, 'some_attr exists';
-}
 
-{
   is $app->render('test', { x => 42, to_string => 1 }), "test = 42 + 1.\n", 'got test template';
-}
-
-{
   ok $app->can_handle_project, 'App::git::ship can handle any git project';
 }
 

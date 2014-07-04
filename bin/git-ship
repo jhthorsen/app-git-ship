@@ -9,13 +9,12 @@ app {
   my $action = shift || 'ship';
 
   if ($action eq 'init') {
-    die "git-ship: Are you in the project root? ./.git was not found\n" if !@_ and !-d '.git';
     bless $self, $self->detect(@_ ? $_[0] : '');
     $self->init(@_);
   }
   else {
-    $self->config;
     bless $self, $self->detect;
+    $self->config;
     $self->abort("Unknown action: $action") if $action !~ /^[a-z]+$/ or !$self->can($action);
     $self->$action(@_);
   }

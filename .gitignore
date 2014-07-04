@@ -12,6 +12,5 @@
 ~$
 /Mojo-Cloudflare*tar.gz
 /local
-/dummy-project
-/ship-init-test-repo
+/workdir
 /cover_db
