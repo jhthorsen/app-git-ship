@@ -1,5 +1,7 @@
 Changelog for App::git::ship
 
+0.02
+       * Need to run ship twice: One for build, and one for ship
 
 0.01     Sat Jul  5 15:16:30 2014
        * Add basic init, build and ship for Perl project

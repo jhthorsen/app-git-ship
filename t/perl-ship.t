@@ -26,8 +26,10 @@ DUMMY
   like $@, qr{Could not update VERSION in}, 'Could not update VERSION';
 
   create_main_module();
-  $app->ship;
+  eval { $app->ship };
+  like $@, qr{Project built}, 'Project built';
 
+  $app->ship;
   is $upload_file, 'Perl-Ship-0.01.tar.gz', 'CPAN::Uploader uploaded file';
 }
 

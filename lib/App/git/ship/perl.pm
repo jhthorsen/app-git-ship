@@ -21,8 +21,6 @@ use Module::CPANfile;
 
 my $VERSION_RE = qr{\b\d+\.[\d_]+\b};
 
-our $SHIP_GUARD = 0;
-
 =head1 ATTRIBUTES
 
 =head2 main_module_path
@@ -202,15 +200,12 @@ sub ship {
   my $dist_file = $self->_dist_files(sub { 1 });
   my $uploader;
 
-  local $SHIP_GUARD = $SHIP_GUARD + 1;
-  
   require CPAN::Uploader;
   $uploader = CPAN::Uploader->new(CPAN::Uploader->read_config_file);
 
   unless ($dist_file) {
-    $self->abort("Build process failed.") if $SHIP_GUARD > 2;
-    $self->build->ship(@_);
-    return;
+    $self->build;
+    $self->abort("Project built. Run (git ship) to post to CPAN and alien repostitory.");
   }
 
   $self->SUPER::ship(@_);
