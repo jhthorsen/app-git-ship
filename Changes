@@ -1,5 +1,8 @@
 Changelog for App::git::ship
 
-0.01
-       * Started project
+
+0.01     Sat Jul  5 15:16:30 2014
+       * Add basic init, build and ship for Perl project
+       * Add basic init for any project
+       * Add detection for Perl projects
 
