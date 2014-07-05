@@ -121,8 +121,8 @@ __PACKAGE__->attr(project_name => sub {
 
 __PACKAGE__->attr(repository => sub {
   my $self = shift;
-  open my $GIT, '-|', 'git remote -v | grep github' or $self->abort("git remote -v: $!");
-  my $repository = readline $GIT;
+  open my $REPOSITORIES, '-|', q( git remote -v ) or $self->abort("git remote -v: $!");
+  my ($repository) = grep { /^origin\b.*\bpush\b/ } <$REPOSITORIES>;
   $repository = sprintf 'https://github.com/%s', $repository ? (split /[:\s+]/, $repository)[2] : lc(join '/', (getpwuid $<)[0], $self->project_name =~ s!::!-!gr);
   warn "[ship::repository] $repository\n" if DEBUG;
   $repository;

@@ -13,6 +13,8 @@ my $app = App::git::ship->new(silent => 1);
 
   is $app->render('test', { x => 42, to_string => 1 }), "test = 42 + 1.\n", 'got test template';
   ok $app->can_handle_project, 'App::git::ship can handle any git project';
+
+  is $app->repository, 'https://github.com/jhthorsen/app-git-ship.git', 'got repository';
 }
 
 {
