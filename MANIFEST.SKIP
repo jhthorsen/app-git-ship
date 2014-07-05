@@ -9,3 +9,4 @@
 ^MANIFEST.*
 ^MYMETA*
 ^README.pod
+^workdir
