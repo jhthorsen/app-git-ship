@@ -19,18 +19,26 @@ DUMMY
 
 {
   my $app = App::git::ship->new;
-  $app = $app->init('Perl/Init.pm', 0);
+  $app = $app->init('Perl/Ship.pm', 0);
 
+  create_bad_main_module();
   eval { $app->ship };
-  like $@, qr{perldoc -tT .* > README}, 'need code to ship';
+  like $@, qr{Could not update VERSION in}, 'Could not update VERSION';
 
-  open my $MAIN_MODULE, '>', File::Spec->catfile(qw( lib Perl Init.pm ));
-  print $MAIN_MODULE "package Perl::Init;\n=head1 NAME\n\nPerl::Init\n\n=cut\n\n1";
-  close $MAIN_MODULE;
-
+  create_main_module();
   $app->ship;
 
-  is $upload_file, 'asd', 'CPAN::Uploader uploaded file';
+  is $upload_file, 'Perl-Ship-0.01.tar.gz', 'CPAN::Uploader uploaded file';
 }
 
 done_testing;
+
+sub create_bad_main_module {
+  open my $MAIN_MODULE, '>', File::Spec->catfile(qw( lib Perl Ship.pm )) or die $!;
+  print $MAIN_MODULE "package Perl::Ship;\n=head1 NAME\n\nPerl::Ship\n\n1";
+}
+
+sub create_main_module {
+  open my $MAIN_MODULE, '>', File::Spec->catfile(qw( lib Perl Ship.pm )) or die $!;
+  print $MAIN_MODULE "package Perl::Ship;\n=head1 NAME\n\nPerl::Ship\n\n=head1 VERSION\n\n0.00\n\n=cut\n\nour \$VERSION = '42';\n\n1";
+}

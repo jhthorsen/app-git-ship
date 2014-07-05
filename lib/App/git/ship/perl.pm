@@ -15,11 +15,13 @@ See L<App::git::ship/SYNOPSIS>
 use App::git::ship -base;
 use Cwd ();
 use File::Basename qw( dirname basename );
-use File::Path 'mkpath';
+use File::Path 'make_path';
 use File::Spec;
 use Module::CPANfile;
 
-my $VERSION_RE = qr{\d+\.[\d_]+};
+my $VERSION_RE = qr{\b\d+\.[\d_]+\b};
+
+our $SHIP_GUARD = 0;
 
 =head1 ATTRIBUTES
 
@@ -166,15 +168,15 @@ Used to generate C<Changes> and C<MANIFEST.SKIP>.
 =cut
 
 sub init {
-  my ($self, $file) = @_;
+  my $self = shift;
 
-  if ($file) {
+  if (my $file = $_[0]) {
     $file = File::Spec->catfile(lib => $file) unless $file =~ m!^.?lib!;
     $self->config({})->main_module_path($file);
     my $work_dir = lc($self->project_name) =~ s!::!-!gr;
     mkdir $work_dir;
     chdir $work_dir or $self->abort("Could not chdir to $work_dir");
-    mkpath dirname $self->main_module_path;
+    make_path dirname $self->main_module_path;
     open my $MAINMODULE, '>>', $self->main_module_path or $self->abort("Could not create %s", $self->main_module_path);
   }
 
@@ -199,12 +201,14 @@ sub ship {
   my $self = shift;
   my $dist_file = $self->_dist_files(sub { 1 });
   my $uploader;
+
+  local $SHIP_GUARD = $SHIP_GUARD + 1;
   
   require CPAN::Uploader;
   $uploader = CPAN::Uploader->new(CPAN::Uploader->read_config_file);
 
   unless ($dist_file) {
-    $self->abort("Build process failed.") if $self->{ship_retry}++;
+    $self->abort("Build process failed.") if $SHIP_GUARD > 2;
     $self->build->ship(@_);
     return;
   }
@@ -220,6 +224,7 @@ sub _author {
 
   open my $GIT, '-|', qw( git log ), "--format=$format" or $self->abort("git log --format=$format: $!");
   my $author = readline $GIT;
+  $self->abort("Could not find any author in git log") unless $author;
   chomp $author;
   warn "[ship::author] $format = $author\n" if DEBUG;
   return $author;
@@ -232,11 +237,11 @@ sub _changes_to_commit_message {
 
   local @ARGV = qw( Changes );
   while (<>) {
-    $message .= $_ if /^($VERSION_RE)\s+/ .. $message && /^$VERSION_RE\s+/;
+    $message .= $_ if /^($VERSION_RE)\s+/ .. $message && /^$VERSION_RE/ || eof;
     $version = $1 if $1;
   }
 
-  $message =~ s!.*\n!Released version $version\n\n!;
+  $message =~ s!.*?\n!Released version $version\n\n!s;
   $message;
 }
 
@@ -256,7 +261,7 @@ sub _dist_files {
 sub _make {
   my ($self, @args) = @_;
 
-  $self->_render_makefile_pl;
+  $self->_render_makefile_pl unless -e 'Makefile.PL';
   $self->system(perl => 'Makefile.PL') unless -e 'Makefile';
   $self->system(make => @args);
 }
@@ -284,24 +289,27 @@ sub _timestamp_to_changes {
   local @ARGV = qw( Changes );
   local $^I = '';
   while (<>) {
-    $self->{next_version} = $1 if s/^($VERSION_RE)\s*/{ sprintf "\n%-7s  %s\n", $1, $date }/e;
+    $self->next_version($1) if s/^($VERSION_RE)\s*/{ sprintf "\n%-7s  %s\n", $1, $date }/e;
     print; # print back to same file
   }
 
-  $self->abort('Unable to add timestamp to ./Changes') unless $self->{next_version};
+  $self->abort('Unable to add timestamp to ./Changes') unless $self->next_version;
 }
 
 sub _update_version_info {
   my $self = shift;
-  my $version = $self->{next_version} or $self->abort('Internal error: Are you sure Changes has a timestamp?');
+  my $version = $self->next_version or $self->abort('Internal error: Are you sure Changes has a timestamp?');
+  my %r;
 
   local @ARGV = ($self->main_module_path);
   local $^I = '';
   while (<>) {
-    s/$VERSION_RE/$version/ if /^=head1 VERSION/ .. /^=head1/;
-    s/((?:our)?\s*\$VERSION)\s*=.*$/$1 = '$version';/;
+    $r{pod} ||= s/$VERSION_RE/$version/ if /^=head1 VERSION/ .. $r{pod} && /^=(cut|head1)/ || eof;
+    $r{var} ||= s/((?:our)?\s*\$VERSION)\s*=.*/$1 = '$version';/;
     print; # print back to same file
   }
+
+  $self->abort('Could not update VERSION in %s', $self->main_module_path) unless $r{var};
 }
 
 =head1 COPYRIGHT AND LICENSE
@@ -370,7 +378,6 @@ WriteMakefile(
 \.bak
 \.git
 \.old
-\.ship\.config
 \.swp
 ~$
 ^blib/

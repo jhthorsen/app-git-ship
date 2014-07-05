@@ -46,7 +46,7 @@ use Carp;
 use Data::Dumper ();
 use File::Basename 'dirname';
 use File::Find ();
-use File::Path 'mkpath';
+use File::Path 'make_path';
 use File::Spec ();
 
 use constant DEBUG => $ENV{GIT_SHIP_DEBUG} || 0;
@@ -63,6 +63,12 @@ my %DATA;
 
 Holds the configuration from end user. The config is by default read from
 C<.ship.conf> in the root of your project.
+
+=head2 next_version
+
+  $str = $self->next_version;
+
+Holds the next version to L</ship>.
 
 =head2 project_name
 
@@ -105,6 +111,8 @@ __PACKAGE__->attr(config => sub {
   return $config;
 });
 
+__PACKAGE__->attr(next_version => sub { 0 });
+
 __PACKAGE__->attr(project_name => sub {
   my $self = shift;
   return $self->config->{project_name} if $self->config->{project_name};
@@ -120,7 +128,7 @@ __PACKAGE__->attr(repository => sub {
   $repository;
 });
 
-__PACKAGE__->attr(silent => sub { $ENV{GIT_SHIP_SILENT} || 0 });
+__PACKAGE__->attr(silent => sub { $ENV{GIT_SHIP_SILENT} // 0 });
 
 =head1 METHODS
 
@@ -266,7 +274,8 @@ sub init {
   $self->system(qw( git init )) unless -d '.git' and @_;
   $self->render('.ship.conf', { homepage => $self->repository =~ s!\.git$!!r });
   $self->render('.gitignore');
-  $self->system(qw( git add .gitignore .ship.conf ));
+  $self->system(qw( git add . ));
+  $self->system(qw( git commit -m Initialized )) if @_;
   delete $self->{config}; # regenerate config from .ship.conf
   $self;
 }
@@ -318,13 +327,13 @@ sub render {
   $self->abort("Could not find template for $name") unless $str;
 
   local @_ = ($self, $args);
-  $str =~ s!<%=([^%]+)%>!{
-            my $x = eval $1 or die $@;
+  $str =~ s!<%=(.+?)%>!{
+            my $x = eval $1 or die DEBUG ? "($1) => $@" : $@;
             ref $x ? Data::Dumper->new([$x])->Indent(1)->Terse(1)->Sortkeys(1)->Dump : $x;
           }!sge;
 
   return $str if $args->{to_string};
-  mkpath dirname($file) or $self->abort("Could not make directory for $file") unless -d dirname $file;
+  make_path dirname($file) or $self->abort("Could not make directory for $file") unless -d dirname $file;
   open my $FH, '>', $file or $self->abort("Could not write $name to $file $!");
   print $FH $str;
   say "git-ship# Generated $file" unless $self->silent;
@@ -338,7 +347,10 @@ is to make a new tag and push it to L</repository>.
 =cut
 
 sub ship {
-  $_[0]->abort('TODO', ref $_[0]);
+  my $self = shift;
+
+  $self->system(qw( git tag ) => $self->next_version);
+  $self->system(qw( git push --tags ), $self->repository);
 }
 
 =head2 system
@@ -357,8 +369,12 @@ sub system {
     open STDERR, '>', File::Spec->devnull;
     open STDOUT, '>', File::Spec->devnull;
   }
+  else {
+    my $log = "$program @args";
+    $log =~ s!\n\r?!\\n!g;
+    say "git-ship\$ $log" unless $self->silent;
+  }
 
-  say "git-ship\$ $program @args" unless $self->silent;
   system $program => @args;
   $exit_code = $? >> 8;
 
