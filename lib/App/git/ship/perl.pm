@@ -103,6 +103,7 @@ sub build {
   $self->_timestamp_to_changes;
   $self->_update_version_info;
   $self->system(sprintf '%s %s > %s', 'perldoc -tT', $self->main_module_path, 'README');
+  $self->system(qw( git add Makefile.PL Changes README ));
   $self->system(qw( git commit -a -m ), $self->_changes_to_commit_message);
   $self->_make('manifest');
   $self->_make('dist');
