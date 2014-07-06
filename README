@@ -1,0 +1,197 @@
+NAME
+    App::git::ship - Git command for shipping your project
+
+VERSION
+    0.03
+
+DESCRIPTION
+    App::git::ship is a "git" command for shipping your project to CPAN or
+    some other repository.
+
+    This project can also "init" (create) a new project, just "build"
+    (prepare for shipping) and "clean" projects.
+
+    The main focus is to automate away the boring steps, but at the same
+    time not get in your way. Problems should be solved with sane defaults
+    according to standard rules instead of enforcing more rules.
+
+SYNOPSIS
+  For end user
+      $ git ship -h
+
+      # make a new project
+
+  For developer
+      package App::git::ship::some_language;
+      use App::git::ship -base;
+
+      # define attributes
+      has some_attribute => sub {
+        my $self = shift;
+        return "default value";
+      };
+
+      # override the methods defined in App::git::ship
+      sub build {
+        my $self = shift;
+      }
+
+      1;
+
+TODO
+    This project is currently in the EXPERIMENTAL phase, where I'm testing
+    things in the real world.
+
+    *   Add a manual for how to make, build and ship a Perl project.
+
+    *   Write down what I think is the key difference between this project
+        and the competing projects.
+
+    *   Make a blogpost
+
+    *   Make git aliases for .gitconfig
+
+ATTRIBUTES
+  config
+      $hash_ref = $self->config;
+
+    Holds the configuration from end user. The config is by default read
+    from ".ship.conf" in the root of your project.
+
+  next_version
+      $str = $self->next_version;
+
+    Holds the next version to "ship".
+
+  project_name
+      $str = $self->project_name;
+
+    Holds the name of the current project. This attribute can be read from
+    "config".
+
+  repository
+      $str = $self->repository;
+
+    Returns the URL to the first repository that point to "origin". This
+    attribute can be read from "config".
+
+  silent
+      $bool = $self->silent;
+      $self = $self->silent($bool);
+
+    Set this to true if you want less logging. By default it silent is
+    false.
+
+METHODS
+  abort
+      $self->abort($str);
+      $self->abort($format, @args);
+
+    Will abort the application run with an error message.
+
+  attr
+      $class = $class->attr($name => sub { my $self = shift; return $default_value });
+
+    or ...
+
+      use App::git::ship -base;
+      has $name => sub { my $self = shift; return $default_value };
+
+    Used to create an attribute with a lazy builder.
+
+  build
+    This method builds the project. The default behavior is to "abort". Need
+    to be overridden in the subclass.
+
+  can_handle_project
+      $bool = $class->can_handle_project($file);
+
+    This method is called by "detect" in App::git::ship and should return
+    boolean true if this module can handle the given git project.
+
+    This is a class method which gets a file as input to detect or have to
+    auto-detect from current working directory.
+
+  detect
+      $class = $self->detect;
+      $class = $self->detect($file);
+
+    Will detect the module which can be used to build the project. This can
+    be read from the "class" key in "config" or will in worse case default
+    to App::git::ship.
+
+  init
+    This method is called when initializing the project. The default
+    behavior is to populate "config" with default data:
+
+    *   bugtracker
+
+        URL to the bug tracker. Will be the the "repository" URL without
+        ".git", but with "/issues" at the end instead.
+
+    *   homepage
+
+        URL to the project homepage. Will be the the "repository" URL,
+        without ".git".
+
+    *   license
+
+        The name of the license. Default to artistic_2
+        <http://www.opensource.org/licenses/artistic-license-2.0>.
+
+        See "license" in CPAN::Meta::Spec for alternatives.
+
+  new
+      $self = $class->new(%attributes);
+
+    Creates a new instance of $class.
+
+  render
+      $self->render($file, \%args);
+
+    Used to render a template by the name $file to a $file. The template
+    need to be defined in the "DATA" section of the current class or one of
+    the super classes.
+
+  ship
+    This method ships the project to some online repository. The default
+    behavior is to make a new tag and push it to "origin".
+
+  system
+      $self->system($program, @args);
+
+    Same as perl's "system()", but provides error handling and logging.
+
+  import
+      use App::git::ship;
+      use App::git::ship -base;
+
+    Called when this class is used. It will automatically enable strict,
+    warnings, utf8 and Perl 5.10 features.
+
+    "-base" will also make sure the calling class inherit from
+    App::git::ship and gets the has function.
+
+SEE ALSO
+    *   Dist::Zilla
+
+        This project can probably get you to the moon.
+
+    *   Minilla
+
+        This looks really nice for shipping your project. It has the same
+        idea as this distribution: Guess as much as possible.
+
+    *   Shipit
+
+        One magical tool for doing it all in one bang.
+
+COPYRIGHT AND LICENSE
+    Copyright (C) 2014, Jan Henning Thorsen
+
+    This program is free software, you can redistribute it and/or modify it
+    under the terms of the Artistic License version 2.0.
+
+AUTHOR
+    Jan Henning Thorsen - "jhthorsen@cpan.org"
+

@@ -1,6 +1,7 @@
 Changelog for App::git::ship
 
-0.03
+
+0.03     Sun Jul  6 14:50:51 2014
        * Fix bad CPAN release
 
 0.02     Sun Jul  6 14:00:00 2014
