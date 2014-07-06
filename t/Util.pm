@@ -57,21 +57,23 @@ sub test_file {
 
 sub test_file_lines {
   my ($class, $file) = (shift, shift);
-  my %lines = map { $_ => 1 } @_;
-  my ($FH, @extra);
+  my ($FH, @extra, @re);
+  my %lines = map { $_ => 1 } grep { ref $_ ? (push @re, $_)[2] : $_ } @_;
 
   unless (open $FH, '<', $file) {
     ok 0, "The file $file is missing";
     return;
   }
 
+  LINE:
   while (<$FH>) {
     chomp;
+    for my $re (@re) { next LINE if $_ =~ $re; }
     delete $lines{$_} or push @extra, $_;
   }
 
-  is_deeply \@extra, [], "The file $file has no extra lines";
-  is_deeply [keys %lines], [], "The file $file has no missing lines";
+  is_deeply \@extra, [], "The file $file has no extra lines" or diag join ', ', @extra;
+  is_deeply [keys %lines], [], "The file $file has no missing lines" or diag join ', ', sort keys %lines;
 }
 
 sub import {

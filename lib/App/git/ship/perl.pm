@@ -336,7 +336,7 @@ __DATA__
 /local
 /Makefile
 /Makefile.old
-/MANIFEST
+/MANIFEST$
 /MANIFEST.bak
 /META*
 /MYMETA*
@@ -372,18 +372,11 @@ WriteMakefile(
   test => { TESTS => 't/*.t' },
 );
 @@ MANIFEST.SKIP
-\.bak
-\.old
-\.swp
-~$
-^\.git
-^blib/
-^cover_db/
+#!include_default
+\.swp$
 ^local/
-^Makefile$
-^MANIFEST.*
-^MYMETA*
-^README.pod
+^MANIFEST\.SKIP
+^README\.pod
 @@ t/00-basic.t
 use Test::More;
 use File::Find;

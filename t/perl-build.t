@@ -43,7 +43,7 @@ t::Util->goto_workdir('perl-build', 0);
 
   touch($_) for qw( foo foo~ foo.bak foo.swp foo.old MYMETA.json );
   $app->_make('manifest');
-  t::Util->test_file_lines('MANIFEST', qw( .ship.conf Changes cpanfile foo lib/Perl/Build.pm Makefile.PL t/00-basic.t ));
+  t::Util->test_file_lines('MANIFEST', qw( .ship.conf Changes cpanfile foo lib/Perl/Build.pm Makefile.PL t/00-basic.t ), qr{^MANIFEST\s+});
 }
 
 done_testing;

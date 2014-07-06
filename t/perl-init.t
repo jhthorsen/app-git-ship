@@ -52,17 +52,11 @@ my $workdir = Cwd::getcwd;
 
   t::Util->test_file(
     'MANIFEST.SKIP',
-    qr{^\\\.bak}m,
-    qr{^\^\\\.git}m,
-    qr{^\\\.old}m,
-    qr{^\\\.swp}m,
-    qr{^\~\$}m,
-    qr{^\^blib}m,
-    qr{^\^cover_db}m,
+    qr{^\#!include_default},
+    qr{^\\\.swp\$}m,
     qr{^\^local}m,
-    qr{^\^Makefile\$}m,
-    qr{^\^MANIFEST}m,
-    qr{^\^README\.pod}m,
+    qr{^\^MANIFEST\\\.SKIP}m,
+    qr{^\^README\\\.pod}m,
   );
 
   t::Util->test_file(
