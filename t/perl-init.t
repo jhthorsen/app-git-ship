@@ -53,7 +53,7 @@ my $workdir = Cwd::getcwd;
   t::Util->test_file(
     'MANIFEST.SKIP',
     qr{^\\\.bak}m,
-    qr{^\\\.git}m,
+    qr{^\^\\\.git}m,
     qr{^\\\.old}m,
     qr{^\\\.swp}m,
     qr{^\~\$}m,

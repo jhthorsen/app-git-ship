@@ -186,6 +186,8 @@ sub init {
   $self->render('Changes');
   $self->render('MANIFEST.SKIP');
   $self->render('t/00-basic.t');
+  $self->system(qw( git add cpanfile Changes MANIFEST.SKIP t ));
+  $self->system(qw( git commit --amend -C HEAD )) if @_;
   $self;
 }
 
@@ -215,8 +217,7 @@ sub ship {
 }
 
 sub _author {
-  my $self = shift;
-  my $format = shift || '%an';
+  my ($self, $format) = @_;
 
   open my $GIT, '-|', qw( git log ), "--format=$format" or $self->abort("git log --format=$format: $!");
   my $author = readline $GIT;
@@ -372,10 +373,10 @@ WriteMakefile(
 );
 @@ MANIFEST.SKIP
 \.bak
-\.git
 \.old
 \.swp
 ~$
+^\.git
 ^blib/
 ^cover_db/
 ^local/

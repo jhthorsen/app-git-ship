@@ -1,7 +1,8 @@
-.git
+\.bak
 \.old
 \.swp
 ~$
+^\.git/
 ^blib/
 ^cover_db/
 ^local/

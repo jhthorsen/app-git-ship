@@ -31,7 +31,7 @@ SKIP: {
   like $author, qr{^[^,]+, <[^\@]+\@[^\>]+>$}, 'got author and email';
 
   $author =~ s!,\s<.*!!;
-  is $app->_author, $author, 'got author';
+  is $app->_author('%an'), $author, 'got author';
 }
 
 done_testing;
