@@ -2,7 +2,7 @@ NAME
     App::git::ship - Git command for shipping your project
 
 VERSION
-    0.03
+    0.04
 
 DESCRIPTION
     App::git::ship is a "git" command for shipping your project to CPAN or
@@ -38,6 +38,16 @@ SYNOPSIS
 
       1;
 
+Git aliases
+    These are some ideas for aliases which could be useful when working with
+    "git-ship".
+
+      $ cat $HOME/.gitconfig
+      [alias]
+        build = ship build
+        cl = ship clean
+        start = ship init
+
 TODO
     This project is currently in the EXPERIMENTAL phase, where I'm testing
     things in the real world.
@@ -48,8 +58,6 @@ TODO
         and the competing projects.
 
     *   Make a blogpost
-
-    *   Make git aliases for .gitconfig
 
 ATTRIBUTES
   config

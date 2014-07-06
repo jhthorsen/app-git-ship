@@ -25,7 +25,7 @@ WriteMakefile(
   'Module::Find' => '0.10',
   'Test::Pod' => '0',
   'Test::Pod::Coverage' => '0',
-  'perl' => '5.10'
+  'perl' => '5.014'
 }
 ,
   test => { TESTS => 't/*.t' },
