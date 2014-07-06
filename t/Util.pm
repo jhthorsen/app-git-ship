@@ -24,6 +24,7 @@ sub goto_workdir {
   my ($class, $workdir, $create) = @_;
   my $base = 'workdir';
 
+  plan skip_all => "Cannot test on $^O" unless $^O eq 'linux';
   $class->mock_git unless $ENV{GIT_REAL_BIN};
   $create //= 1;
 
