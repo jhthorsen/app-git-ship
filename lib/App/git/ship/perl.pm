@@ -139,25 +139,17 @@ Used to clean out build files.
 sub clean {
   my $self = shift;
   my $all = shift // 1;
-  my @files = qw(
-    Makefile
-    Makefile.old
-    MANIFEST
-    MYMETA.json
-    MYMETA.yml
-  );
+  my @files = qw( Makefile Makefile.old MANIFEST MYMETA.json MYMETA.yml );
 
-  if ($all) {
-    push @files, qw(
-      Changes.bak
-      META.json
-      META.yml
-    );
-  }
+  push @files, qw( Changes.bak META.json META.yml ) if $all;
+  $self->_dist_files(sub { push @files, $_; });
 
   for my $file (@files) {
-    unlink $file if -e $file;
+    next unless -e $file;
+    unlink $file or warn "!! rm $file: $!";
   }
+
+  return $self;
 }
 
 =head2 init
@@ -213,7 +205,7 @@ sub ship {
 
   $self->SUPER::ship(@_);
   $uploader->upload_file($dist_file);
-  $self;
+  $self->clean;
 }
 
 sub _author {
@@ -286,10 +278,11 @@ sub _timestamp_to_changes {
   local @ARGV = qw( Changes );
   local $^I = '';
   while (<>) {
-    $self->next_version($1) if s/^($VERSION_RE)\s*/{ sprintf "\n%-7s  %s\n", $1, $date }/e;
+    $self->next_version($1) if s/^($VERSION_RE)\s*$/{ sprintf "\n%-7s  %s\n", $1, $date }/e;
     print; # print back to same file
   }
 
+  say 'Building version ', $self->next_version unless $self->silent;
   $self->abort('Unable to add timestamp to ./Changes') unless $self->next_version;
 }
 

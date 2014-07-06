@@ -28,7 +28,7 @@ t::Util->goto_workdir('perl-build', 0);
   );
 
   t::Util->test_file('Changes', qr{^[\d\.]+$}m);
-  $app->_timestamp_to_changes;
+  $app->_timestamp_to_changes for 1..3; # need to see what happens if you run multiple times
   t::Util->test_file('Changes', qr{^[\d\.]+\s+\w+\s}m);
 
   create_main_module();
