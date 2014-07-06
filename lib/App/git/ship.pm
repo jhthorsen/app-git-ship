@@ -145,8 +145,8 @@ sub abort {
   my ($self, $format, @args) = @_;
   my $message = @args ? sprintf $format, @args : $format;
 
-  Carp::confess("git-ship! $message") if DEBUG;
-  die "git-ship! $message\n";
+  Carp::confess("!! $message") if DEBUG;
+  die "!! $message\n";
 }
 
 =head2 attr
@@ -315,7 +315,7 @@ sub render {
   my $str;
 
   if (-e $file and !$args->{force}) {
-    say "git-ship# $file exists" unless $self->silent;
+    say "# $file exists" unless $self->silent;
     return $self;
   }
 
@@ -336,7 +336,7 @@ sub render {
   make_path dirname($file) or $self->abort("Could not make directory for $file") unless -d dirname $file;
   open my $FH, '>', $file or $self->abort("Could not write $name to $file $!");
   print $FH $str;
-  say "git-ship# Generated $file" unless $self->silent;
+  say "# Generated $file" unless $self->silent;
 }
 
 =head2 ship
@@ -372,7 +372,7 @@ sub system {
   else {
     my $log = "$program @args";
     $log =~ s!\n\r?!\\n!g;
-    say "git-ship\$ $log" unless $self->silent;
+    say "\$ $log" unless $self->silent;
   }
 
   system $program => @args;

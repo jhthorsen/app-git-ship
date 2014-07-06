@@ -19,23 +19,23 @@ my $app = App::git::ship->new(silent => 1);
 
 {
   eval { $app->abort("foo") };
-  like $@, qr{^git-ship! foo}, 'abort foo';
+  like $@, qr{^\!\! foo}, 'abort foo';
 
   eval { $app->abort("foo %s", 123) };
-  like $@, qr{^git-ship! foo 123}, 'abort foo 123';
+  like $@, qr{^\!\! foo 123}, 'abort foo 123';
 }
 
 {
   eval { $app->system(perl => '-e', '$!=42;die') };
-  like $@, qr{^git-ship! 'perl -e \$!=42;die' failed: 42}, 'system() failed';
+  like $@, qr{^\!\! 'perl -e \$!=42;die' failed: 42}, 'system() failed';
 }
 
 {
   eval { $app->build };
-  like $@, qr{^git-ship! build}, 'build() cannot do anything';
+  like $@, qr{^\!\! build}, 'build() cannot do anything';
 
   eval { $app->test };
-  like $@, qr{^git-ship! test}, 'test() cannot do anything';
+  like $@, qr{^\!\! test}, 'test() cannot do anything';
 }
 
 done_testing;
