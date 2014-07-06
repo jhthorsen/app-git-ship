@@ -15,27 +15,18 @@ my $app = App::git::ship->new(silent => 1);
   ok $app->can_handle_project, 'App::git::ship can handle any git project';
 
   is $app->repository, 'https://github.com/jhthorsen/app-git-ship.git', 'got repository';
-}
 
-{
   eval { $app->abort("foo") };
   like $@, qr{^\!\! foo}, 'abort foo';
 
   eval { $app->abort("foo %s", 123) };
   like $@, qr{^\!\! foo 123}, 'abort foo 123';
-}
 
-{
   eval { $app->system(perl => '-e', '$!=42;die') };
   like $@, qr{^\!\! 'perl -e \$!=42;die' failed: 42}, 'system() failed';
-}
 
-{
   eval { $app->build };
   like $@, qr{^\!\! build}, 'build() cannot do anything';
-
-  eval { $app->test };
-  like $@, qr{^\!\! test}, 'test() cannot do anything';
 }
 
 done_testing;

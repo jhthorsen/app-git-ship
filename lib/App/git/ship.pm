@@ -14,7 +14,7 @@ L<App::git::ship> is a C<git> command for shipping your project to CPAN or
 some other repository.
 
 This project can also L</init> (create) a new project, just L</build> (prepare
-for L<shipping|/ship>), L</test> and L</clean> projects.
+for L<shipping|/ship>) and L</clean> projects.
 
 The main focus is to automate away the boring steps, but at the same time not
 get in your way. Problems should be solved with sane defaults according to
@@ -128,10 +128,12 @@ __PACKAGE__->attr(config => sub {
 
   while (<$CFG>) {
     chomp;
-    warn "[ship::config] $_\n" if DEBUG;
-    my ($k, $v) = /^\s*(\S+)\s*=\s*(\w.+)/ or next;
-    $config->{$k} = $v;
-    $config->{$k} =~ s!\s+\#.*!!;
+    warn "[ship::config] $_\n" if DEBUG == 2;
+    m/\A\s*(?:\#|$)/ and next; # comments
+    s/\s+\#.*$//; # remove inline comments
+    m/^\s*([^\=\s][^\=]*?)\s*=\s*(.*?)\s*$/ or next;
+    $config->{$1} = $2;
+    warn "[ship::config] $1 = $2\n" if DEBUG;
   }
 
   return $config;
@@ -413,17 +415,6 @@ sub system {
   $self;
 }
 
-=head2 test
-
-This method test the project. The default behavior is to L</abort>.
-Need to be overridden in the subclass.
-
-=cut
-
-sub test {
-  $_[0]->abort('test() is not available for %s', ref $_[0]);
-}
-
 =head2 import
 
   use App::git::ship;
@@ -524,6 +515,7 @@ project_name =
 homepage = <%= $_[1]->{homepage} %>
 bugtracker = <%= join('/', $_[1]->{homepage}, 'issues') =~ s!(\w)//!$1/!r %>
 license = artistic_2
+build_test_options = # Example: -l -j8
 @@ .gitignore
 ~$
 *.bak

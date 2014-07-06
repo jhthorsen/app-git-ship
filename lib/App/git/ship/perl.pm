@@ -99,6 +99,8 @@ sub build {
   my $self = shift;
 
   $self->clean(0);
+  $self->system(prove => split /\s/, $self->config->{build_test_options}) if $self->config->{build_test_options};
+  $self->clean(0);
   $self->_render_makefile_pl;
   $self->_timestamp_to_changes;
   $self->_update_version_info;
@@ -218,7 +220,7 @@ sub ship {
 
   unless ($dist_file) {
     $self->build;
-    $self->abort("Project built. Run (git ship) to post to CPAN and alien repostitory.");
+    $self->abort("Project built. Run 'git ship' again to post to CPAN and alien repostitory.");
   }
 
   $self->system(qw( git add Makefile.PL Changes README ));
