@@ -13,11 +13,20 @@ App::git::ship - Git command for shipping your project
 L<App::git::ship> is a C<git> command for shipping your project to CPAN or
 some other repository.
 
+This project can also L</init> (create) a new project, just L</build> (prepare
+for L<shipping|/ship>), L</test> and L</clean> projects.
+
+The main focus is to automate away the boring steps, but at the same time not
+get in your way. Problems should be solved with sane defaults according to
+standard rules instead of enforcing more rules.
+
 =head1 SYNOPSIS
 
 =head2 For end user
 
   $ git ship -h
+
+  # make a new project
 
 =head2 For developer
 
@@ -36,6 +45,23 @@ some other repository.
   }
 
   1;
+
+=head1 TODO
+
+This project is currently in the EXPERIMENTAL phase, where I'm testing things
+in the real world.
+
+=over
+
+=item * Add a manual for how to make, build and ship a Perl project.
+
+=item * Write down what I think is the key difference between this project and the competing projects.
+
+=item * Make a blogpost
+
+=item * Make git aliases for .gitconfig
+
+=back
 
 =cut
 
