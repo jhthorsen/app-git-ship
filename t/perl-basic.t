@@ -10,9 +10,12 @@ my $app = App::git::ship::perl->new;
 {
   my $dist_file = 'App-git-SHIP.tar.gz';
   my $found = 0;
+
   is $app->project_name, 'App::git::ship', 'project_name()';
   is $app->_dist_files(sub { $found++; return; }), undef, 'found no dist file';
   is $found, 0, '_dist_files callback was not called';
+
+  is_deeply [$app->exe_files], ['bin/git-ship'], 'exe_files: bin/git-ship';
 
   open my $FH, '>', $dist_file or die "Write $dist_file: $!";
   close $FH;

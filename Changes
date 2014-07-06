@@ -5,6 +5,7 @@ Changelog for App::git::ship
        * Use the default MANIFEST.SKIP file in addition to custom rules
        * Add "clean" for Perl project
        * Add Makefile.PL and README to git repository on build
+       * Add EXE_FILES to Makefile.PL
        * Fix MANIFEST.SKIP to make a proper release
 
 0.01     Sat Jul  5 15:16:30 2014

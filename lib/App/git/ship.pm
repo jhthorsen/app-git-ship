@@ -354,7 +354,7 @@ sub render {
 
   local @_ = ($self, $args);
   $str =~ s!<%=(.+?)%>!{
-            my $x = eval $1 or die DEBUG ? "($1) => $@" : $@;
+            my $x = eval $1 // die DEBUG ? "($1) => $@" : $@;
             ref $x ? Data::Dumper->new([$x])->Indent(1)->Terse(1)->Sortkeys(1)->Dump : $x;
           }!sge;
 

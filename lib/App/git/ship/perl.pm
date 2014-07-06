@@ -152,6 +152,25 @@ sub clean {
   return $self;
 }
 
+=head2 exe_files
+
+  @files = $self->exe_files;
+
+Returns a list of files in the "bin/" directory that has the executable flag
+set.
+
+This method is used to build the C<EXE_FILES> list in C<Makefile.PL>.
+
+=cut
+
+sub exe_files {
+  my $self = shift;
+  my $BIN;
+
+  return unless opendir $BIN, 'bin';
+  return map { "bin/$_" } grep { /^\w/ and -x File::Spec->catfile("bin", $_) } readdir $BIN;
+}
+
 =head2 init
 
 Used to generate C<Changes> and C<MANIFEST.SKIP>.
@@ -355,6 +374,7 @@ WriteMakefile(
   LICENSE => '<%= $_[0]->config->{license} %>',
   ABSTRACT_FROM => '<%= $_[0]->main_module_path %>',
   VERSION_FROM => '<%= $_[0]->main_module_path %>',
+  EXE_FILES => [qw( <%= join ' ', $_[0]->exe_files %> )],
   META_MERGE => {
     resources => {
       bugtracker => '<%= $_[0]->config->{bugtracker} %>',

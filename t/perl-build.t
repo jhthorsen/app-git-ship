@@ -10,6 +10,10 @@ t::Util->goto_workdir('perl-build', 0);
   $app->init('Perl/Build.pm', 0);
   $main_module_path = $app->main_module_path;
 
+  mkdir 'bin';
+  touch(File::Spec->catfile("bin", $_)) for qw( e-x-e foo );
+  chmod 0755, File::Spec->catfile(qw( bin e-x-e ));
+
   $app->_render_makefile_pl;
   t::Util->test_file(
     'Makefile.PL',
@@ -26,6 +30,11 @@ t::Util->goto_workdir('perl-build', 0);
     qr{BUILD_REQUIRES => .*?\bTest::More\b}s,
     qr{PREREQ_PM => .*?\bperl\b}s,
   );
+
+  TODO: {
+    local $TODO = -x "bin/e-x-e" ? "" : "Cannot test on $^O";
+    t::Util->test_file('Makefile.PL', qr{EXE_FILES => \[qw\( bin/e-x-e \)\]}s);
+  }
 
   t::Util->test_file('Changes', qr{^[\d\.]+$}m);
   $app->_timestamp_to_changes for 1..3; # need to see what happens if you run multiple times
@@ -45,7 +54,7 @@ t::Util->goto_workdir('perl-build', 0);
 
   touch($_) for qw( foo foo~ foo.bak foo.swp foo.old MYMETA.json );
   $app->_make('manifest');
-  t::Util->test_file_lines('MANIFEST', qw( .ship.conf Changes cpanfile foo lib/Perl/Build.pm Makefile.PL t/00-basic.t ), qr{^MANIFEST\s+});
+  t::Util->test_file_lines('MANIFEST', qw( bin/e-x-e bin/foo .ship.conf Changes cpanfile foo lib/Perl/Build.pm Makefile.PL t/00-basic.t ), qr{^MANIFEST\s+});
 }
 
 done_testing;
