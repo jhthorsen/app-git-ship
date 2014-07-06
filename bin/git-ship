@@ -5,6 +5,7 @@ option bool => push => 'Push built project to alien repository.', 0;
 
 documentation 'App::git::ship::Manual';
 extends 'App::git::ship';
+version 'App::git::ship';
 
 app {
   my $self = shift;
