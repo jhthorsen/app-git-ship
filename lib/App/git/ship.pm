@@ -107,7 +107,7 @@ L</config>.
 
   $str = $self->repository;
 
-Returns the URL to the first repository that point to L<github|http://github.com>.
+Returns the URL to the first repository that point to "origin".
 This attribute can be read from L</config>.
 
 =head2 silent
@@ -368,7 +368,7 @@ sub render {
 =head2 ship
 
 This method ships the project to some online repository. The default behavior
-is to make a new tag and push it to L</repository>.
+is to make a new tag and push it to "origin".
 
 =cut
 
@@ -376,7 +376,7 @@ sub ship {
   my $self = shift;
 
   $self->system(qw( git tag ) => $self->next_version);
-  $self->system(qw( git push --tags ), $self->repository);
+  $self->system(qw( git push --tags origin ));
 }
 
 =head2 system
