@@ -103,8 +103,6 @@ sub build {
   $self->_timestamp_to_changes;
   $self->_update_version_info;
   $self->system(sprintf '%s %s > %s', 'perldoc -tT', $self->main_module_path, 'README');
-  $self->system(qw( git add Makefile.PL Changes README ));
-  $self->system(qw( git commit -a -m ), $self->_changes_to_commit_message);
   $self->_make('manifest');
   $self->_make('dist');
   $self;
@@ -146,7 +144,8 @@ sub clean {
 
   for my $file (@files) {
     next unless -e $file;
-    unlink $file or warn "!! rm $file: $!";
+    unlink $file or warn "!! rm $file: $!" and next;
+    say "\$ rm $file" unless $self->silent;
   }
 
   return $self;
@@ -222,7 +221,9 @@ sub ship {
     $self->abort("Project built. Run (git ship) to post to CPAN and alien repostitory.");
   }
 
-  $self->SUPER::ship(@_);
+  $self->system(qw( git add Makefile.PL Changes README ));
+  $self->system(qw( git commit -a -m ), $self->_changes_to_commit_message);
+  $self->SUPER::ship(@_); # after all the changes
   $uploader->upload_file($dist_file);
   $self->clean;
 }
@@ -303,7 +304,7 @@ sub _timestamp_to_changes {
     print; # print back to same file
   }
 
-  say 'Building version ', $self->next_version unless $self->silent;
+  say '# Building version ', $self->next_version unless $self->silent;
   $self->abort('Unable to add timestamp to ./Changes') unless $self->next_version;
 }
 
