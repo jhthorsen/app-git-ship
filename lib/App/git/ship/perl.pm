@@ -221,17 +221,19 @@ sub _author {
 
 sub _changes_to_commit_message {
   my $self = shift;
-  my $message = '';
-  my $version;
+  my ($version, @message);
 
+  close ARGV; # reset <> iterator
   local @ARGV = qw( Changes );
   while (<>) {
-    $message .= $_ if /^($VERSION_RE)\s+/ .. $message && /^$VERSION_RE/ || eof;
-    $version = $1 if $1;
+    last if @message and /^($VERSION_RE)\s+/;
+    push @message, $_ if @message;
+    push @message, $_ and $version = $1 if /^($VERSION_RE)\s+/;
   }
 
-  $message =~ s!.*?\n!Released version $version\n\n!s;
-  $message;
+  $message[0] =~ s!.*?\n!Released version $version\n\n!s;
+  local $" = '';
+  return "@message";
 }
 
 sub _dist_files {

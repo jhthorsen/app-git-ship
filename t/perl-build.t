@@ -39,7 +39,9 @@ t::Util->goto_workdir('perl-build', 0);
     qr{^our \$VERSION = '0\.01';}m,
   );
 
-  like $app->_changes_to_commit_message, qr{Released version [\d\._]+\n\n\s+}, '_changes_to_commit_message()';
+  add_version_to_changes("0.$_") for 1..3;
+  like $app->_changes_to_commit_message, qr{^Released version 0\.3}s, '_changes_to_commit_message()';
+  like $app->_changes_to_commit_message, qr{^Released version 0\.3\n\n\W+Some other cool feature for 0\.3\.\n\n$}s, '_changes_to_commit_message() reset diamond operator';
 
   touch($_) for qw( foo foo~ foo.bak foo.swp foo.old MYMETA.json );
   $app->_make('manifest');
@@ -51,6 +53,17 @@ done_testing;
 sub create_main_module {
   open my $MAIN_MODULE, '>', File::Spec->catfile(qw( lib Perl Build.pm ));
   print $MAIN_MODULE "package Perl::Build;\n=head1 NAME\n\nPerl::Build\n\n=head1 VERSION\n\n0.00\n\n=cut\n\nour \$VERSION = '42';\n\n1";
+}
+
+
+sub add_version_to_changes {
+  my $version = shift;
+  local @ARGV = ('Changes');
+  local $^I = '';
+  while (<>) {
+    print "$version\n       * Some other cool feature for $version.\n\n" if $. == 3;
+    print;
+  }
 }
 
 sub touch {
