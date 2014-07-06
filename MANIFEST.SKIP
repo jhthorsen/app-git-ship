@@ -1,13 +1,6 @@
-\.bak
-\.old
-\.swp
-~$
-^\.git/
-^blib/
-^cover_db/
+#!include_default
+\.swp$
 ^local/
-^Makefile$
-^MANIFEST.*
-^MYMETA*
-^README.pod
+^MANIFEST\.SKIP
+^README\.pod
 ^workdir
