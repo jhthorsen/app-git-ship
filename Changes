@@ -1,6 +1,9 @@
 Changelog for App::git::ship
 
-0.02
+0.03
+       * Fix bad CPAN release
+
+0.02     Sun Jul  6 14:00:00 2014
        * Need to run ship twice: One for build, and one for ship
        * Use the default MANIFEST.SKIP file in addition to custom rules
        * Add "clean" for Perl project
