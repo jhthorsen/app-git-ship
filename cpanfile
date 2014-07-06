@@ -1,4 +1,4 @@
-requires "perl" => "5.10";
+requires "perl" => "5.014";
 requires "Applify" => "0.06";
 requires "File::Path" => "0";
 requires "CPAN::Uploader" => "0.10";
