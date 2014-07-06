@@ -222,6 +222,15 @@ sub ship {
     $self->build;
     $self->abort("Project built. Run 'git ship' again to post to CPAN and alien repostitory.");
   }
+  unless ($self->next_version) {
+    close ARGV;
+    local @ARGV = qw( Changes );
+    while (<>) {
+      /^($VERSION_RE)\s*/ or next;
+      $self->next_version($1);
+      last;
+    }
+  }
 
   $self->system(qw( git add Makefile.PL Changes README ));
   $self->system(qw( git commit -a -m ), $self->_changes_to_commit_message);

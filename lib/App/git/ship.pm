@@ -386,6 +386,7 @@ is to make a new tag and push it to "origin".
 sub ship {
   my $self = shift;
 
+  $self->abort("Cannot ship without a version number") unless $self->next_version;
   $self->system(qw( git tag ) => $self->next_version);
   $self->system(qw( git push --tags origin ));
 }
