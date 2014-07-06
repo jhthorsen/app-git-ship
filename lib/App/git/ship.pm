@@ -46,6 +46,17 @@ standard rules instead of enforcing more rules.
 
   1;
 
+=head1 Git aliases
+
+These are some ideas for aliases which could be useful when working with
+C<git-ship>.
+
+  $ cat $HOME/.gitconfig
+  [alias]
+    build = ship build
+    cl = ship clean
+    start = ship init
+
 =head1 TODO
 
 This project is currently in the EXPERIMENTAL phase, where I'm testing things
@@ -58,8 +69,6 @@ in the real world.
 =item * Write down what I think is the key difference between this project and the competing projects.
 
 =item * Make a blogpost
-
-=item * Make git aliases for .gitconfig
 
 =back
 
