@@ -1,6 +1,7 @@
 Changelog for App::git::ship
 
-0.05
+
+0.05     Mon Jul  7 22:46:49 2014
        * Will also push the current branch to origin
        * Fix CPAN testers errors
          http://www.cpantesters.org/cpan/report/417de3d8-6bf5-1014-af60-f4e550131f1b
