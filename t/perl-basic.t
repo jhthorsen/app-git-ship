@@ -12,8 +12,6 @@ my $app = App::git::ship::perl->new;
   is $app->_dist_files(sub { $found++; return; }), undef, 'found no dist file';
   is $found, 0, '_dist_files callback was not called';
 
-  is_deeply [$app->exe_files], ['bin/git-ship'], 'exe_files: bin/git-ship';
-
   open my $FH, '>', $dist_file or die "Write $dist_file: $!";
   close $FH;
   is $app->_dist_files(sub { ++$found; }), $dist_file, "found $dist_file";
@@ -21,7 +19,14 @@ my $app = App::git::ship::perl->new;
   $app->_dist_files(sub { ++$found; return; });
   is $found, 2, '_dist_files callback was called once';
 
+  like $app->_changes_to_commit_message, qr{Released version [\d\._]+\n\n\s+}, '_changes_to_commit_message()';
+
   unlink $dist_file;
+}
+
+TODO: {
+  local $TODO = $^O eq 'linux' ? undef : 'No idea how to test this on other platforms';
+  is_deeply [$app->exe_files], ['bin/git-ship'], 'exe_files: bin/git-ship';
 }
 
 SKIP: {

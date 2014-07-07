@@ -1,11 +1,6 @@
 use t::Util;
 use App::git::ship::perl;
 
-{
-  my $app = App::git::ship::perl->new;
-  like $app->_changes_to_commit_message, qr{Released version [\d\._]+\n\n\s+}, '_changes_to_commit_message()';
-}
-
 t::Util->goto_workdir('perl-ship', 0);
 
 my $upload_file;

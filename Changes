@@ -2,6 +2,8 @@ Changelog for App::git::ship
 
 0.05
        * Will also push the current branch to origin
+       * Fix CPAN testers errors
+         http://www.cpantesters.org/cpan/report/417de3d8-6bf5-1014-af60-f4e550131f1b
 
 0.04     Sun Jul  6 15:13:11 2014
        * Require perl 5.14, because of "Non-destructive substitution", s///r
