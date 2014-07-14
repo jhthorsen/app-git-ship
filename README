@@ -2,7 +2,7 @@ NAME
     App::git::ship - Git command for shipping your project
 
 VERSION
-    0.05
+    0.06
 
 DESCRIPTION
     App::git::ship is a "git" command for shipping your project to CPAN or
