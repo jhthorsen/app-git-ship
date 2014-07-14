@@ -21,7 +21,9 @@ WriteMakefile(
   PREREQ_PM => {
   'Applify' => '0.06',
   'CPAN::Uploader' => '0.10',
+  'ExtUtils::MakeMaker' => '6.00',
   'File::Path' => '0',
+  'Module::CPANfile' => '1.00',
   'Module::Find' => '0.10',
   'Test::Pod' => '0',
   'Test::Pod::Coverage' => '0',

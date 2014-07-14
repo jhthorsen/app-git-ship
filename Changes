@@ -1,5 +1,7 @@
 Changelog for App::git::ship
 
+0.06
+       * Add missing dependencies: Module::CPANfile and ExtUtils::MakeMaker
 
 0.05     Mon Jul  7 22:46:49 2014
        * Will also push the current branch to origin
