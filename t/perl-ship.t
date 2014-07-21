@@ -3,6 +3,11 @@ use App::git::ship::perl;
 
 t::Util->goto_workdir('perl-ship', 0);
 
+{
+  # 0.07: test to see if perldoc -tT should work
+  open my $FH, '>', 'README' or plan skip_all => sprintf 'Could not touch README in %s', Cwd::getcwd;
+}
+
 my $upload_file;
 eval <<'DUMMY' or die $@;
 package CPAN::Uploader;
@@ -26,7 +31,8 @@ DUMMY
   eval { $app->ship };
   like $@, qr{Project built}, 'Project built';
 
-  $app->ship;
+  eval { $app->ship };
+  is $@, '', 'no ship error';
   is $upload_file, 'Perl-Ship-0.01.tar.gz', 'CPAN::Uploader uploaded version 0.01';
 }
 

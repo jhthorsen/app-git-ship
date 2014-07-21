@@ -1,5 +1,8 @@
 Changelog for App::git::ship
 
+0.07
+       * Try to fix failing system() test from cpantesters
+         http://www.cpantesters.org/cpan/report/00a82db4-103e-11e4-84c4-fc77f9652e90
 
 0.06     Mon Jul 14 08:14:06 2014
        * Add missing dependencies: Module::CPANfile and ExtUtils::MakeMaker

@@ -416,6 +416,7 @@ sub system {
     say "\$ $log" unless $self->silent;
   }
 
+  local $?;
   system $program => @args;
   $exit_code = $? >> 8;
 
