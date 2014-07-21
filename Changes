@@ -1,6 +1,7 @@
 Changelog for App::git::ship
 
-0.07
+
+0.07     Mon Jul 21 06:48:09 2014
        * Try to fix failing system() test from cpantesters
          http://www.cpantesters.org/cpan/report/00a82db4-103e-11e4-84c4-fc77f9652e90
 
