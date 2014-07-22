@@ -18,8 +18,14 @@ use File::Basename qw( dirname basename );
 use File::Path 'make_path';
 use File::Spec;
 use Module::CPANfile;
+use POSIX qw( setlocale strftime LC_TIME );
 
-my $VERSION_RE = qr{\b\d+\.[\d_]+\b};
+my $VERSION_RE = qr{\W*\b(\d+\.[\d_]+)\b};
+
+my %FILENAMES = (
+  changelog => [qw( CHANGELOG.md Changes )],
+  readme => [qw( README.md README )],
+);
 
 =head1 ATTRIBUTES
 
@@ -97,6 +103,7 @@ Used to build a Perl distribution.
 
 sub build {
   my $self = shift;
+  my $readme = $self->_filename('readme');
 
   $self->clean(0);
   $self->system(prove => split /\s/, $self->config->{build_test_options}) if $self->config->{build_test_options};
@@ -104,7 +111,7 @@ sub build {
   $self->_render_makefile_pl;
   $self->_timestamp_to_changes;
   $self->_update_version_info;
-  $self->system(sprintf '%s %s > %s', 'perldoc -tT', $self->main_module_path, 'README');
+  $self->system(sprintf '%s %s > %s', 'perldoc -tT', $self->main_module_path, $readme) if $readme eq 'README';
   $self->_make('manifest');
   $self->_make('dist');
   $self;
@@ -180,6 +187,7 @@ Used to generate C<Changes> and C<MANIFEST.SKIP>.
 
 sub init {
   my $self = shift;
+  my $changelog;
 
   if (my $file = $_[0]) {
     $file = File::Spec->catfile(lib => $file) unless $file =~ m!^.?lib!;
@@ -192,13 +200,14 @@ sub init {
   }
 
   symlink $self->main_module_path, 'README.pod' unless -e 'README.pod';
+  $changelog = $self->_filename('changelog');
 
   $self->SUPER::init(@_);
   $self->render('cpanfile');
-  $self->render('Changes');
+  $self->render('Changes') if $changelog eq 'Changes';
   $self->render('MANIFEST.SKIP');
   $self->render('t/00-basic.t');
-  $self->system(qw( git add cpanfile Changes MANIFEST.SKIP t ));
+  $self->system(qw( git add cpanfile MANIFEST.SKIP t ), $changelog);
   $self->system(qw( git commit --amend -C HEAD )) if @_;
   $self;
 }
@@ -213,6 +222,7 @@ using C<cpan-uploader-http>.
 sub ship {
   my $self = shift;
   my $dist_file = $self->_dist_files(sub { 1 });
+  my $changelog = $self->_filename('changelog');
   my $uploader;
 
   require CPAN::Uploader;
@@ -224,15 +234,15 @@ sub ship {
   }
   unless ($self->next_version) {
     close ARGV;
-    local @ARGV = qw( Changes );
+    local @ARGV = $changelog;
     while (<>) {
-      /^($VERSION_RE)\s*/ or next;
+      /^$VERSION_RE\s*/ or next;
       $self->next_version($1);
       last;
     }
   }
 
-  $self->system(qw( git add Makefile.PL Changes README ));
+  $self->system(qw( git add Makefile.PL ), $changelog, $self->_filename('readme'));
   $self->system(qw( git commit -a -m ), $self->_changes_to_commit_message);
   $self->SUPER::ship(@_); # after all the changes
   $uploader->upload_file($dist_file);
@@ -252,16 +262,18 @@ sub _author {
 
 sub _changes_to_commit_message {
   my $self = shift;
+  my $changelog = $self->_filename('changelog');
   my ($version, @message);
 
   close ARGV; # reset <> iterator
-  local @ARGV = qw( Changes );
+  local @ARGV = $changelog;
   while (<>) {
-    last if @message and /^($VERSION_RE)\s+/;
+    last if @message and /^$VERSION_RE\s+/;
     push @message, $_ if @message;
-    push @message, $_ and $version = $1 if /^($VERSION_RE)\s+/;
+    push @message, $_ and $version = $1 if /^$VERSION_RE\s+/;
   }
 
+  $self->abort("Could not find any changes in $changelog") unless @message;
   $message[0] =~ s!.*?\n!Released version $version\n\n!s;
   local $" = '';
   return "@message";
@@ -278,6 +290,11 @@ sub _dist_files {
   }
 
   return undef;
+}
+
+sub _filename {
+  opendir(my $DH, '');
+  return (grep { -w } @{ $FILENAMES{$_[1]} })[0] || $FILENAMES{$_[1]}->[-1];
 }
 
 sub _make {
@@ -306,17 +323,29 @@ sub _render_makefile_pl {
 
 sub _timestamp_to_changes {
   my $self = shift;
-  my $date = localtime;
+  my $changelog = $self->_filename('changelog');
+  my $loc = setlocale(LC_TIME);
+  my $release_line;
 
-  local @ARGV = qw( Changes );
+  $release_line = sub {
+    my $v = shift;
+    my $str = $self->config->{new_version_format} || '%-7v  %a %b %e %H:%M:%S %Y';
+    $str =~ s!(%-?\d*)v!{ sprintf "${1}s", $v }!e;
+    setlocale LC_TIME, 'C';
+    $str = strftime $str, localtime;
+    setlocale LC_TIME, $loc;
+    return "$str\n";
+  };
+
+  local @ARGV = $changelog;
   local $^I = '';
   while (<>) {
-    $self->next_version($1) if s/^($VERSION_RE)\s*$/{ sprintf "\n%-7s  %s\n", $1, $date }/e;
+    $self->next_version($1) if s/^$VERSION_RE\s*$/{ $release_line->($1) }/e;
     print; # print back to same file
   }
 
   say '# Building version ', $self->next_version unless $self->silent;
-  $self->abort('Unable to add timestamp to ./Changes') unless $self->next_version;
+  $self->abort('Unable to add timestamp to ./%s', $changelog) unless $self->next_version;
 }
 
 sub _update_version_info {

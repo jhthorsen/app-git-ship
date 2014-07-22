@@ -1,5 +1,9 @@
 Changelog for App::git::ship
 
+0.08
+       * Add support for CHANGELOG.md and README.md
+       * Add support for custom changelog timestamp
+       * Add support for "#" in config file, using "\#"
 
 0.07     Mon Jul 21 06:48:09 2014
        * Try to fix failing system() test from cpantesters
