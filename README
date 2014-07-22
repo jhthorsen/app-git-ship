@@ -2,7 +2,7 @@ NAME
     App::git::ship - Git command for shipping your project
 
 VERSION
-    0.07
+    0.08
 
 DESCRIPTION
     App::git::ship is a "git" command for shipping your project to CPAN or
@@ -127,6 +127,14 @@ METHODS
     Will detect the module which can be used to build the project. This can
     be read from the "class" key in "config" or will in worse case default
     to App::git::ship.
+
+  run_hook
+      $self->run_hook($name);
+
+    Used to run a hook before or after an event. The hook is a command which
+    needs to be defined in the config file. Example config line parameter:
+
+      before_build = echo foo > bar.txt
 
   init
     This method is called when initializing the project. The default

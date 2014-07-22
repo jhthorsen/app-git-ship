@@ -1,6 +1,6 @@
 Changelog for App::git::ship
 
-0.08
+0.08     Tue Jul 22 16:51:02 2014
        * Add support for CHANGELOG.md and README.md
        * Add support for custom changelog timestamp
        * Add support for "#" in config file, using "\#"
