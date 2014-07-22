@@ -164,8 +164,8 @@ sub clean {
 
   @files = $self->exe_files;
 
-Returns a list of files in the "bin/" directory that has the executable flag
-set.
+Returns a list of files in the "bin/" and "script/" directory that has the
+executable flag set.
 
 This method is used to build the C<EXE_FILES> list in C<Makefile.PL>.
 
@@ -173,10 +173,14 @@ This method is used to build the C<EXE_FILES> list in C<Makefile.PL>.
 
 sub exe_files {
   my $self = shift;
-  my $BIN;
+  my @files;
 
-  return unless opendir $BIN, 'bin';
-  return map { "bin/$_" } grep { /^\w/ and -x File::Spec->catfile("bin", $_) } readdir $BIN;
+  for my $d (qw( bin script )) {
+    opendir(my $BIN, $d) or next;
+    push @files, map { "$d/$_" } grep { /^\w/ and -x File::Spec->catfile($d, $_) } readdir $BIN;
+  }
+
+  return @files;
 }
 
 =head2 init
