@@ -276,6 +276,23 @@ sub detect {
   $self->abort("Could not figure out what kind of project this is from '$file'");
 }
 
+=head2 run_hook
+
+  $self->run_hook($name);
+
+Used to run a hook before or after an event. The hook is a command which
+needs to be defined in the config file. Example config line parameter:
+
+  before_build = echo foo > bar.txt
+
+=cut
+
+sub run_hook {
+  my ($self, $name) = @_;
+  my $cmd = $self->config->{$name} or return;
+  $self->system($cmd);
+}
+
 =head2 init
 
 This method is called when initializing the project. The default behavior is

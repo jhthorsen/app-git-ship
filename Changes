@@ -5,6 +5,7 @@ Changelog for App::git::ship
        * Add support for custom changelog timestamp
        * Add support for "#" in config file, using "\#"
        * Add support for executeables in ./script/ directory
+       * Add support for after/before build and ship hooks
 
 0.07     Mon Jul 21 06:48:09 2014
        * Try to fix failing system() test from cpantesters

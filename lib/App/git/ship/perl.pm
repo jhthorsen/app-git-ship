@@ -108,12 +108,14 @@ sub build {
   $self->clean(0);
   $self->system(prove => split /\s/, $self->config->{build_test_options}) if $self->config->{build_test_options};
   $self->clean(0);
+  $self->run_hook('before_build');
   $self->_render_makefile_pl;
   $self->_timestamp_to_changes;
   $self->_update_version_info;
   $self->system(sprintf '%s %s > %s', 'perldoc -tT', $self->main_module_path, $readme) if $readme eq 'README';
   $self->_make('manifest');
   $self->_make('dist');
+  $self->run_hook('after_build');
   $self;
 }
 
@@ -246,10 +248,12 @@ sub ship {
     }
   }
 
+  $self->run_hook('before_ship');
   $self->system(qw( git add Makefile.PL ), $changelog, $self->_filename('readme'));
   $self->system(qw( git commit -a -m ), $self->_changes_to_commit_message);
   $self->SUPER::ship(@_); # after all the changes
   $uploader->upload_file($dist_file);
+  $self->run_hook('after_ship');
   $self->clean;
 }
 
