@@ -26,6 +26,7 @@ sub goto_workdir {
 
   plan skip_all => "Cannot test on $^O" unless $^O eq 'linux';
   $class->mock_git unless $ENV{GIT_REAL_BIN};
+  $class->test_git($ENV{GIT_REAL_BIN});
   $create //= 1;
 
   mkdir $base unless -d $base;
@@ -75,6 +76,15 @@ sub test_file_lines {
 
   is_deeply \@extra, [], "The file $file has no extra lines" or diag join ', ', @extra;
   is_deeply [keys %lines], [], "The file $file has no missing lines" or diag join ', ', sort keys %lines;
+}
+
+sub test_git {
+  my ($class, $git) = @_;
+
+  plan skip_all => "Invalid git: $git" unless $git =~ qr{^[\w\/-]+$};
+  my $output = qx{$git --version 2>/dev/null};
+  plan skip_all => "Invalid git: $output" unless $output =~ qr{\b\s+version\s+\d};
+  diag "git --version: $output" unless $output =~ /\b1\.9/
 }
 
 sub import {
