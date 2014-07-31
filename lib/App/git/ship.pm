@@ -6,7 +6,7 @@ App::git::ship - Git command for shipping your project
 
 =head1 VERSION
 
-0.08
+0.09
 
 =head1 DESCRIPTION
 
@@ -86,7 +86,7 @@ use File::Spec ();
 
 use constant DEBUG => $ENV{GIT_SHIP_DEBUG} || 0;
 
-our $VERSION = '0.08';
+our $VERSION = '0.09';
 
 my %DATA;
 
