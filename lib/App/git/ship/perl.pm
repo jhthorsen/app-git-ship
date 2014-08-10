@@ -185,39 +185,6 @@ sub exe_files {
   return @files;
 }
 
-=head2 init
-
-Used to generate C<Changes> and C<MANIFEST.SKIP>.
-
-=cut
-
-sub init {
-  my $self = shift;
-  my $changelog;
-
-  if (my $file = $_[0]) {
-    $file = File::Spec->catfile(lib => $file) unless $file =~ m!^.?lib!;
-    $self->config({})->main_module_path($file);
-    my $work_dir = lc($self->project_name) =~ s!::!-!gr;
-    mkdir $work_dir;
-    chdir $work_dir or $self->abort("Could not chdir to $work_dir");
-    make_path dirname $self->main_module_path;
-    open my $MAINMODULE, '>>', $self->main_module_path or $self->abort("Could not create %s", $self->main_module_path);
-  }
-
-  symlink $self->main_module_path, 'README.pod' unless -e 'README.pod';
-  $changelog = $self->_filename('changelog');
-
-  $self->SUPER::init(@_);
-  $self->render('cpanfile');
-  $self->render('Changes') if $changelog eq 'Changes';
-  $self->render('MANIFEST.SKIP');
-  $self->render('t/00-basic.t');
-  $self->system(qw( git add cpanfile MANIFEST.SKIP t ), $changelog);
-  $self->system(qw( git commit --amend -C HEAD )) if @_;
-  $self;
-}
-
 =head2 ship
 
 Use L<App::git::ship/ship> and then push the new release to CPAN
@@ -255,6 +222,39 @@ sub ship {
   $uploader->upload_file($dist_file);
   $self->run_hook('after_ship');
   $self->clean;
+}
+
+=head2 start
+
+Used to generate C<Changes> and C<MANIFEST.SKIP>.
+
+=cut
+
+sub start {
+  my $self = shift;
+  my $changelog;
+
+  if (my $file = $_[0]) {
+    $file = File::Spec->catfile(lib => $file) unless $file =~ m!^.?lib!;
+    $self->config({})->main_module_path($file);
+    my $work_dir = lc($self->project_name) =~ s!::!-!gr;
+    mkdir $work_dir;
+    chdir $work_dir or $self->abort("Could not chdir to $work_dir");
+    make_path dirname $self->main_module_path;
+    open my $MAINMODULE, '>>', $self->main_module_path or $self->abort("Could not create %s", $self->main_module_path);
+  }
+
+  symlink $self->main_module_path, 'README.pod' unless -e 'README.pod';
+  $changelog = $self->_filename('changelog');
+
+  $self->SUPER::start(@_);
+  $self->render('cpanfile');
+  $self->render('Changes') if $changelog eq 'Changes';
+  $self->render('MANIFEST.SKIP');
+  $self->render('t/00-basic.t');
+  $self->system(qw( git add cpanfile MANIFEST.SKIP t ), $changelog);
+  $self->system(qw( git commit --amend -C HEAD )) if @_;
+  $self;
 }
 
 sub _author {

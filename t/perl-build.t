@@ -7,7 +7,7 @@ t::Util->goto_workdir('perl-build', 0);
   my $app = App::git::ship::perl->new;
   my $main_module_path;
 
-  $app->init('Perl/Build.pm', 0);
+  $app->start('Perl/Build.pm', 0);
   $main_module_path = $app->main_module_path;
 
   mkdir 'bin';

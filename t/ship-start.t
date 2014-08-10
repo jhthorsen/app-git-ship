@@ -1,16 +1,16 @@
 use t::Util;
 use App::git::ship;
 
-t::Util->goto_workdir('ship-init');
+t::Util->goto_workdir('ship-start');
 
 my $app = App::git::ship->new;
 my $username = getpwuid $<;
 
 {
-  eval { $app->init('foo.unknown') };
+  eval { $app->start('foo.unknown') };
   like $@, qr{Could not figure out what kind of project this is}, 'Could not figure out what kind of project this is';
 
-  $app->init;
+  $app->start;
   ok -d '.git', '.git was created';
   is $app->config->{bugtracker}, "https://github.com/$username/unknown/issues", 'bugtracker is set up';
   is $app->config->{homepage}, "https://github.com/$username/unknown", 'homepage is set up';

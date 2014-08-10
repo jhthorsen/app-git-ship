@@ -20,7 +20,7 @@ DUMMY
 {
   diag 'First release';
   my $app = App::git::ship->new;
-  $app = $app->init('Perl/Ship.pm', 0);
+  $app = $app->start('Perl/Ship.pm', 0);
   $upload_file = '';
 
   create_bad_main_module();

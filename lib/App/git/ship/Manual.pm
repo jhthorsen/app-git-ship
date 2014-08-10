@@ -6,11 +6,46 @@ git-ship - A git command for shipping your project
 
 =head1 SYNOPSIS
 
-  # Set up the config file
-  $ git ship init
+New project:
 
-  # The command below will ship your project
+  $ git start My/Project.pm
+  $ cd my-project
+
+  # make changes
+  $ $EDITOR lib/My/Project.pm
+
+  # build first if you want to investigate the changes
+  $ git ship build
+
+  # ship the project to git (and CPAN)
   $ git ship
+
+Existing project:
+
+  # Set up .ship config and basic repo files
+  $ cd my-project
+  $ git ship start
+
+  # make changes
+  $ $EDITOR lib/My/Project.pm
+
+  # build first if you want to investigate the changes
+  $ git ship build
+
+  # ship the project to git (and CPAN)
+  $ git ship
+
+Add git aliased:
+
+  # git build
+  $ git config --global alias.build = ship build
+
+  # git cl
+  $ git config --global alias.cl = ship clean
+
+  # git start
+  # git start My/Project.pm
+  $ git config --global alias.start = ship start
 
 =head1 DESCRIPTION
 
@@ -22,7 +57,7 @@ The program runs through these steps by default:
 =head2 Config
 
 The first step is to read the L<config file|App::git::ship/config>. If the
-config cannot be read, the app will set up a L<default config|App::git::ship/init>
+config cannot be read, the app will set up a L<default config|App::git::ship/start>
 file with as much information as possible.
 
 =head2 Detect

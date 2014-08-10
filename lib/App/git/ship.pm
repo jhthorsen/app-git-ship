@@ -13,7 +13,7 @@ App::git::ship - Git command for shipping your project
 L<App::git::ship> is a C<git> command for shipping your project to CPAN or
 some other repository.
 
-This project can also L</init> (create) a new project, just L</build> (prepare
+This project can also L</start> (create) a new project, just L</build> (prepare
 for L<shipping|/ship>) and L</clean> projects.
 
 The main focus is to automate away the boring steps, but at the same time not
@@ -55,7 +55,7 @@ C<git-ship>.
   [alias]
     build = ship build
     cl = ship clean
-    start = ship init
+    start = ship start
 
 =head1 TODO
 
@@ -293,49 +293,6 @@ sub run_hook {
   $self->system($cmd);
 }
 
-=head2 init
-
-This method is called when initializing the project. The default behavior is
-to populate L</config> with default data:
-
-=over 4
-
-=item * bugtracker
-
-URL to the bug tracker. Will be the the L</repository> URL without ".git", but
-with "/issues" at the end instead.
-
-=item * homepage
-
-URL to the project homepage. Will be the the L</repository> URL, without ".git".
-
-=item * license
-
-The name of the license. Default to L<artistic_2|http://www.opensource.org/licenses/artistic-license-2.0>.
-
-See L<CPAN::Meta::Spec/license> for alternatives.
-
-=back
-
-=cut
-
-sub init {
-  my $self = shift;
-
-  if (@_ and ref($self) eq __PACKAGE__) {
-    return $self->detect($_[0])->new($self)->init(@_);
-  }
-
-  $self->config({}); # make sure repository() does not die
-  $self->system(qw( git init )) unless -d '.git' and @_;
-  $self->render('.ship.conf', { homepage => $self->repository =~ s!\.git$!!r });
-  $self->render('.gitignore');
-  $self->system(qw( git add . ));
-  $self->system(qw( git commit -m Initialized )) if @_;
-  delete $self->{config}; # regenerate config from .ship.conf
-  $self;
-}
-
 =head2 new
 
   $self = $class->new(%attributes);
@@ -411,6 +368,49 @@ sub ship {
   $self->system(qw( git push origin ), $branch);
   $self->system(qw( git tag ) => $self->next_version);
   $self->system(qw( git push --tags origin ));
+}
+
+=head2 start 
+
+This method is called when initializing the project. The default behavior is
+to populate L</config> with default data:
+
+=over 4
+
+=item * bugtracker
+
+URL to the bug tracker. Will be the the L</repository> URL without ".git", but
+with "/issues" at the end instead.
+
+=item * homepage
+
+URL to the project homepage. Will be the the L</repository> URL, without ".git".
+
+=item * license
+
+The name of the license. Default to L<artistic_2|http://www.opensource.org/licenses/artistic-license-2.0>.
+
+See L<CPAN::Meta::Spec/license> for alternatives.
+
+=back
+
+=cut
+
+sub start {
+  my $self = shift;
+
+  if (@_ and ref($self) eq __PACKAGE__) {
+    return $self->detect($_[0])->new($self)->start(@_);
+  }
+
+  $self->config({}); # make sure repository() does not die
+  $self->system(qw( git init )) unless -d '.git' and @_;
+  $self->render('.ship.conf', { homepage => $self->repository =~ s!\.git$!!r });
+  $self->render('.gitignore');
+  $self->system(qw( git add . ));
+  $self->system(qw( git commit -m Initialized )) if @_;
+  delete $self->{config}; # regenerate config from .ship.conf
+  $self;
 }
 
 =head2 system

@@ -1,5 +1,8 @@
 Changelog for App::git::ship
 
+0.10
+       * Rename "init" to "start"
+
 0.09     Thu Jul 31 12:17:40 2014
        * Try to avoid failing cpantesters test "!! 'git init' failed: 1"
 

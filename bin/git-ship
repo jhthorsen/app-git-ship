@@ -13,9 +13,9 @@ app {
 
   $ENV{GIT_SHIP_PUSH} = $self->push;
 
-  if ($action eq 'init') {
+  if ($action eq 'start') {
     bless $self, $self->detect(@_ ? $_[0] : '');
-    $self->init(@_);
+    $self->start(@_);
   }
   else {
     bless $self, $self->detect;
