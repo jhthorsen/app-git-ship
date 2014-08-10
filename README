@@ -2,13 +2,13 @@ NAME
     App::git::ship - Git command for shipping your project
 
 VERSION
-    0.09
+    0.10
 
 DESCRIPTION
     App::git::ship is a "git" command for shipping your project to CPAN or
     some other repository.
 
-    This project can also "init" (create) a new project, just "build"
+    This project can also "start" (create) a new project, just "build"
     (prepare for shipping) and "clean" projects.
 
     The main focus is to automate away the boring steps, but at the same
@@ -46,7 +46,7 @@ Git aliases
       [alias]
         build = ship build
         cl = ship clean
-        start = ship init
+        start = ship start
 
 TODO
     This project is currently in the EXPERIMENTAL phase, where I'm testing
@@ -136,7 +136,23 @@ METHODS
 
       before_build = echo foo > bar.txt
 
-  init
+  new
+      $self = $class->new(%attributes);
+
+    Creates a new instance of $class.
+
+  render
+      $self->render($file, \%args);
+
+    Used to render a template by the name $file to a $file. The template
+    need to be defined in the "DATA" section of the current class or one of
+    the super classes.
+
+  ship
+    This method ships the project to some online repository. The default
+    behavior is to make a new tag and push it to "origin".
+
+  start
     This method is called when initializing the project. The default
     behavior is to populate "config" with default data:
 
@@ -156,22 +172,6 @@ METHODS
         <http://www.opensource.org/licenses/artistic-license-2.0>.
 
         See "license" in CPAN::Meta::Spec for alternatives.
-
-  new
-      $self = $class->new(%attributes);
-
-    Creates a new instance of $class.
-
-  render
-      $self->render($file, \%args);
-
-    Used to render a template by the name $file to a $file. The template
-    need to be defined in the "DATA" section of the current class or one of
-    the super classes.
-
-  ship
-    This method ships the project to some online repository. The default
-    behavior is to make a new tag and push it to "origin".
 
   system
       $self->system($program, @args);
