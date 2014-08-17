@@ -10,23 +10,116 @@ App::git::ship - Git command for shipping your project
 
 =head1 DESCRIPTION
 
-L<App::git::ship> is a C<git> command for shipping your project to CPAN or
-some other repository.
+L<App::git::ship> is a L<git|http://git-scm.com/> command for building and
+shipping your project.
+
+The main focus is to automate away the boring steps, but at the same time not
+get in your (or any random contributor) way. Problems should be solved with
+sane defaults according to standard rules instead of enforcing more rules.
 
 This project can also L</start> (create) a new project, just L</build> (prepare
 for L<shipping|/ship>) and L</clean> projects.
 
-The main focus is to automate away the boring steps, but at the same time not
-get in your way. Problems should be solved with sane defaults according to
-standard rules instead of enforcing more rules.
+L<App::git::ship> differ from other tools like L<dzil|Dist::Zilla> by not
+enforcing new ways to do things, but rather incorporate with the existing
+way. Example structure and how L<App::git::ship> works on your files:
+
+=over 4
+
+=item * my-app/cpanfile and my-app/Makefile.PL
+
+The L<cpanfile> is used to build the "PREREQ_PM" and "BUILD_REQUIRES"
+structures in the L<ExtUtils::MakeMaker> based C<Makefile.PL> build file.
+The reason for this is that L<cpanfile> is a more powerful format that can
+be used by L<Carton> and other tools, so generating L<cpanfile> from
+Makefile.PL would simply not be possible. Other data used to generate
+Makefile.PL are: 
+
+"NAME", "LICENSE" will have values from L</project_name> and L</license>.
+"AUTHOR" will have the name and email from the last git committer.
+"ABSTRACT_FROM" and "VERSION_FROM" are fetched from the
+L<main_module_path|App::git::ship::perl/main_module_path>.
+"EXE_FILES" will be the files in C<bin/> or C<script/> which is executable.
+"META_MERGE" will use data from L</bugtracker>, L</homepage> andL</repository>.
+
+=item * my-app/CHANGELOG.md or my-app/Changes
+
+The Changes file will be updated with the correct L<timestamp|/new_version_format>,
+from when you ran the L</build> action. The Changes file will also be the source
+for L</next_version>. Both C<CHANGELOG.md> and C<Changes> are valid sources.
+
+=item * my-app/README
+
+Will be updated with the main module documentation using the command below:
+
+  $ perldoc -tT $main_module_path > README;
+
+If you don't like this format, you can create C<README.md> instead. The
+presense of that file will prevent "my-app/README" from getting generated.
+
+=item * my-app/lib/My/App.pm
+
+This L<file|App::git::ship::perl/main_module_path> will be updated with
+version number from the Changes file.
+
+=item * .gitignore and MANIFEST.SKIP
+
+Unless these files exist, they will be generated from a template which skip
+the most common files. The default content of these files might change over
+time if new temp files are created by new editors or some other formats come
+along.
+
+=item * t/00-basic.t
+
+Unless this file exists, it will be created with a test for checking
+that your modules can compile and that the POD is correct. The file can be
+customized afterwards and will not be overwritten.
+
+=back
 
 =head1 SYNOPSIS
 
-=head2 For end user
+=head2 Existing project
+
+  # Set up .ship config and basic repo files
+  $ cd my-project
+  $ git ship start
+
+  # make changes
+  $ $EDITOR lib/My/Project.pm
+
+  # build first if you want to investigate the changes
+  $ git ship build
+
+  # ship the project to git (and CPAN)
+  $ git ship
+
+=head2 New project
 
   $ git ship -h
+  $ git start My/Project.pm
+  $ cd my-project
 
-  # make a new project
+  # make changes
+  $ $EDITOR lib/My/Project.pm
+
+  # build first if you want to investigate the changes
+  $ git ship build
+
+  # ship the project to git (and CPAN)
+  $ git ship
+
+=head2 Git aliases
+
+  # git build
+  $ git config --global alias.build = ship build
+
+  # git cl
+  $ git config --global alias.cl = ship clean
+
+  # git start
+  # git start My/Project.pm
+  $ git config --global alias.start = ship start
 
 =head2 For developer
 
@@ -46,29 +139,77 @@ standard rules instead of enforcing more rules.
 
   1;
 
-=head1 Git aliases
+=head1 CONFIG
 
-These are some ideas for aliases which could be useful when working with
-C<git-ship>.
+C<App::git::ship> automatically generates a config file when you L</start> a
+new project.
 
-  $ cat $HOME/.gitconfig
-  [alias]
-    build = ship build
-    cl = ship clean
-    start = ship start
+=over 4
 
-=head1 TODO
+=item * bugtracker
 
-This project is currently in the EXPERIMENTAL phase, where I'm testing things
-in the real world.
+URL to the bugtracker for this project.
 
-=over
+=item * build_test_options
 
-=item * Add a manual for how to make, build and ship a Perl project.
+This holds the arguments for the test program to use when building the
+project. The default is to not automatically run the tests. Example value:
 
-=item * Write down what I think is the key difference between this project and the competing projects.
+  build_test_options = -l -j4
 
-=item * Make a blogpost
+=item * class
+
+This class is used to build the object that runs all the actions on your
+project. This is autodetected by looking at the structure and files in
+your project. For now this value can be L<App::git::ship> or
+L<App::git::ship::perl>, but any customization is allowed.
+
+=item * homepage
+
+URL to the home page for this project.
+
+=item * license
+
+The name of the license to use. Defaults to "artistic_2".
+
+=item * new_version_format
+
+This is optional, but specifies the version format in your "Changes" file.
+The example below will result in "## 0.42 (2014-01-28)".
+
+  new_version_format = \#\# %v (%F)
+
+"%v" will be replaced by the version, while the format arguments are passed
+on to L<POSIX/strftime>.
+
+The default is "%-7v  %a %b %e %H:%M:%S %Y".
+
+=item * project_name
+
+This name is extracted from either the L<App::git::ship::perl/main_module_path>
+or defaults to "unknown" if no project name could be found. Example:
+
+  project_name = My::App
+
+=item * Comments
+
+Comments are made by adding the hash symbol (#) followed by text. If you want
+to use the "#" as a value, it need to be escaped using "\#". Examples:
+
+  # This whole line is skipped
+  parameter = 123 # The end of this line is skipped
+  parameter = some \# value with hash
+
+=item * Hooks
+
+It is possible to add hooks to the L</CONFIG> file. These hooks are
+programs that runs in your shell. Example L<.ship|/CONFIG> file with hooks:
+
+  before_build = bash script/new-release.sh
+  after_build = rm -r lib/My/App/templates lib/My/App/public
+  after_ship = cat Changes | mail -s "Changes for My::App" all@my-app.com
+
+Possible hook are C<before_build>, C<after_build>, C<before_ship> and C<after_ship>.
 
 =back
 

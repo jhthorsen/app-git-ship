@@ -1,5 +1,8 @@
 Changelog for App::git::ship
 
+0.11
+       * Improved documentation
+
 0.10     Sun Aug 10 11:23:22 2014
        * Rename "init" to "start"
        * Remove --push application switch

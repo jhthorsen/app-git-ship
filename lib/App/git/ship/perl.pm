@@ -97,7 +97,51 @@ has _cpanfile => sub { Module::CPANfile->load; };
 
 =head2 build
 
-Used to build a Perl distribution.
+Used to build a Perl distribution by running through these steps:
+
+=over 4
+
+=item 1.
+
+Call L</clean> to make sure the repository does not contain old build files.
+
+=item 2.
+
+Run L<prove|App::Prove> if C<build_test_options> is set in C<.ship.conf>.
+
+=item 3.
+
+Run "before_build" L<hook|App::git::ship/Hooks>.
+
+=item 4.
+
+Render Makefile.PL
+
+=item 5.
+
+Add timestamp to changes file.
+
+=item 6.
+
+Update version in main module file.
+
+=item 7.
+
+Update README with perldoc, unless another readfile file exists.
+
+=item 8.
+
+Make MANIFEST
+
+=item 9.
+
+Make dist file (Your-App-0.42.tar.gz)
+
+=item 10.
+
+Run "after_build" L<hook|App::git::ship/Hooks>.
+
+=back
 
 =cut
 
@@ -141,7 +185,10 @@ sub can_handle_project {
 
 =head2 clean
 
-Used to clean out build files.
+Used to clean out build files:
+
+Makefile, Makefile.old, MANIFEST, MYMETA.json, MYMETA.yml, Changes.bak, META.json
+and META.yml.
 
 =cut
 
@@ -187,8 +234,36 @@ sub exe_files {
 
 =head2 ship
 
-Use L<App::git::ship/ship> and then push the new release to CPAN
-using C<cpan-uploader-http>.
+Used to ship a Perl distribution by running through these steps:
+
+=over 4
+
+=item 1.
+
+Find the dist file created by L</build> or abort if it could not be found.
+
+=item 2.
+
+Run "before_ship" L<hook|App::git::ship/Hooks>.
+
+=item 3.
+
+Add and commit the files changed in the L</build> step.
+
+=item 4.
+
+Use L<App::git::ship/next_version> to make a new tag and push all the changes
+to the "origin" git repository.
+
+=item 5.
+
+Upload the dist file to CPAN.
+
+=item 6.
+
+Run "after_ship" L<hook|App::git::ship/Hooks>.
+
+=back
 
 =cut
 
