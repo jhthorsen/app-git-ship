@@ -380,6 +380,23 @@ sub _filename {
   return (grep { -w } @{ $FILENAMES{$_[1]} })[0] || $FILENAMES{$_[1]}->[-1];
 }
 
+sub _include_mskip_file {
+  my ($self, $file) = @_;
+  my @lines;
+
+  $file ||= do { require ExtUtils::Manifest; $ExtUtils::Manifest::DEFAULT_MSKIP; };
+
+  unless (-r $file) {
+    warn "MANIFEST.SKIP included file '$file' not found - skipping\n";
+    return '';
+  }
+
+  @lines = ("#!start included $file\n");
+  local @ARGV = ($file);
+  push @lines, $_ while <>;
+  return join "", @lines, "#!end included $file\n";
+}
+
 sub _make {
   my ($self, @args) = @_;
 
@@ -511,7 +528,7 @@ WriteMakefile(
   test => { TESTS => 't/*.t' },
 );
 @@ MANIFEST.SKIP
-#!include_default
+<%= $_[0]->_include_mskip_file %>
 \.swp$
 ^local/
 ^MANIFEST\.SKIP

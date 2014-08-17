@@ -52,7 +52,8 @@ my $workdir = Cwd::getcwd;
 
   t::Util->test_file(
     'MANIFEST.SKIP',
-    qr{^\#!include_default},
+    qr{\#\!start included .*MANIFEST\.SKIP},
+    qr{pm_to_blib}, # from included MANIFEST.SKIP file
     qr{^\\\.swp\$}m,
     qr{^\^local}m,
     qr{^\^MANIFEST\\\.SKIP}m,
