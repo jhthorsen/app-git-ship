@@ -332,6 +332,31 @@ sub start {
   $self;
 }
 
+=head2 test_coverage
+
+Use L<Devel::Cover> to check test coverage for the distribution.
+
+Set L<DEVEL_COVER_OPTIONS|https://metacpan.org/pod/Devel::Cover#OPTIONS> to
+pass on options to L<Devel::Cover>. The default value will be set to:
+
+  DEVEL_COVER_OPTIONS=+ignore,t
+
+=cut
+
+sub test_coverage {
+  my $self = shift;
+
+  unless (eval 'require Devel::Cover; 1') {
+    $self->abort('Devel::Cover is not installed. Install it with curl -L http://cpanmin.us | perl - Devel::Cover');
+  }
+
+  local $ENV{DEVEL_COVER_OPTIONS} = $ENV{DEVEL_COVER_OPTIONS} || '+ignore,^t\b';
+  local $ENV{HARNESS_PERL_SWITCHES} = '-MDevel::Cover';
+  $self->system(qw( cover -delete ));
+  $self->system(qw( prove -l ));
+  $self->system(qw( cover ));
+}
+
 sub _author {
   my ($self, $format) = @_;
 

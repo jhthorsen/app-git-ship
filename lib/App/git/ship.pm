@@ -589,6 +589,17 @@ sub system {
   $self;
 }
 
+=head2 test_coverage
+
+This method check test coverage for the project. The default behavior is to
+L</abort>. Need to be overridden in the subclass.
+
+=cut
+
+sub test_coverage {
+  $_[0]->abort('test_coverage() is not available for %s', ref $_[0]);
+}
+
 =head2 import
 
   use App::git::ship;

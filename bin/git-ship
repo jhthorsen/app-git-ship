@@ -9,6 +9,8 @@ app {
   my $self = shift;
   my $action = shift || 'ship';
 
+  $action =~ s/-/_/g;
+
   if ($action eq 'start') {
     bless $self, $self->detect(@_ ? $_[0] : '');
     $self->start(@_);
@@ -16,7 +18,7 @@ app {
   else {
     bless $self, $self->detect;
     $self->config;
-    $self->abort("Unknown action: $action") if $action !~ /^[a-z]+$/ or !$self->can($action);
+    $self->abort("Unknown action: $action") if $action !~ /^[a-z_]+$/ or !$self->can($action);
     $self->$action(@_);
   }
 

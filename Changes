@@ -1,5 +1,8 @@
 Changelog for App::git::ship
 
+0.12
+       * Add command test_coverage()
+
 0.11     Sun Aug 17 12:36:37 2014
        * Improved documentation
        * Will include the default skip file on creation time of MANIFEST.SKIP
