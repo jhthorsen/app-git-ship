@@ -1,6 +1,6 @@
 Changelog for App::git::ship
 
-0.12
+0.12     Thu Aug 21 08:58:43 2014
        * Add command test_coverage()
 
 0.11     Sun Aug 17 12:36:37 2014

@@ -2,7 +2,7 @@ NAME
     App::git::ship - Git command for shipping your project
 
 VERSION
-    0.11
+    0.12
 
 DESCRIPTION
     App::git::ship is a git <http://git-scm.com/> command for building and
@@ -319,6 +319,10 @@ METHODS
       $self->system($program, @args);
 
     Same as perl's "system()", but provides error handling and logging.
+
+  test_coverage
+    This method check test coverage for the project. The default behavior is
+    to "abort". Need to be overridden in the subclass.
 
   import
       use App::git::ship;
