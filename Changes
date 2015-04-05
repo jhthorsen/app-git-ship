@@ -1,5 +1,8 @@
 Changelog for App::git::ship
 
+0.13
+       * Fix parsing http repository url
+
 0.12     Thu Aug 21 08:58:43 2014
        * Add command test_coverage()
 

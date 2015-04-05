@@ -64,7 +64,6 @@ sub create_main_module {
   print $MAIN_MODULE "package Perl::Build;\n=head1 NAME\n\nPerl::Build\n\n=head1 VERSION\n\n0.00\n\n=cut\n\nour \$VERSION = '42';\n\n1";
 }
 
-
 sub add_version_to_changes {
   my $version = shift;
   local @ARGV = ('Changes');
