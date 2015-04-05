@@ -1,6 +1,6 @@
 Changelog for App::git::ship
 
-0.13
+0.13     Sun Apr  5 23:32:08 2015
        * Fix parsing http repository url
 
 0.12     Thu Aug 21 08:58:43 2014
