@@ -1,5 +1,8 @@
 Changelog for App::git::ship
 
+0.1301   Mon Apr  6 08:53:29 2015
+       * Fix t/repository.t
+
 0.13     Sun Apr  5 23:32:08 2015
        * Fix parsing http repository url
 
