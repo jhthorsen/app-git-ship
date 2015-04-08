@@ -6,7 +6,7 @@ App::git::ship - Git command for shipping your project
 
 =head1 VERSION
 
-0.1301
+0.14
 
 =head1 DESCRIPTION
 
@@ -227,7 +227,7 @@ use File::Spec ();
 
 use constant DEBUG => $ENV{GIT_SHIP_DEBUG} || 0;
 
-our $VERSION = '0.1301';
+our $VERSION = '0.14';
 
 my %DATA;
 
@@ -554,7 +554,7 @@ sub start {
   }
 
   $self->config({}); # make sure repository() does not die
-  $self->system(qw( git init )) unless -d '.git' and @_;
+  $self->system(qw( git init-db )) unless -d '.git' and @_;
   $self->render('.ship.conf', { homepage => $self->repository =~ s!\.git$!!r });
   $self->render('.gitignore');
   $self->system(qw( git add . ));

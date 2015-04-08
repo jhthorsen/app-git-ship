@@ -2,7 +2,7 @@ NAME
     App::git::ship - Git command for shipping your project
 
 VERSION
-    0.1301
+    0.14
 
 DESCRIPTION
     App::git::ship is a git <http://git-scm.com/> command for building and
