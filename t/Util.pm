@@ -80,11 +80,12 @@ sub test_file_lines {
 
 sub test_git {
   my ($class, $git) = @_;
+  my $output;
 
   plan skip_all => "Invalid git: $git" unless $git =~ qr{^[\w\/-]+$};
-  my $output = qx{$git --version 2>/dev/null};
+  $output = qx{$git --version 2>/dev/null};
   plan skip_all => "Invalid git: $output" unless $output =~ qr{\b\s+version\s+\d};
-  diag "git --version: $output" unless $output =~ /\b1\.9/
+  diag "git --version: $output" unless $output =~ /\b(1\.9|2\.[0123])/;
 }
 
 sub import {

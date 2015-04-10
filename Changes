@@ -1,6 +1,6 @@
 Changelog for App::git::ship
 
-0.15
+0.15     Fri Apr 10 08:47:51 2015
        * Will display STDERR/STDOUT if $exit_code != 0 and silent() is set
 
 0.14     Wed Apr  8 13:20:39 2015
