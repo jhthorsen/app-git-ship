@@ -1,5 +1,8 @@
 Changelog for App::git::ship
 
+0.15
+       * Will display STDERR/STDOUT if $exit_code != 0 and silent() is set
+
 0.14     Wed Apr  8 13:20:39 2015
        * Change "git init" to "git init-db"
          http://git-scm.com/docs/git-init-db/1.5.0
