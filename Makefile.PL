@@ -23,6 +23,7 @@ WriteMakefile(
   'CPAN::Uploader' => '0.10',
   'ExtUtils::MakeMaker' => '6.00',
   'File::Path' => '2.00',
+  'IPC::Run3' => '0.04',
   'Module::CPANfile' => '1.00',
   'Module::Find' => '0.10',
   'Test::Pod' => '0',
