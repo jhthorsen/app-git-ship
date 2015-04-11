@@ -497,7 +497,7 @@ sub render {
 
   return $str if $args->{to_string};
   make_path dirname($file) or $self->abort("Could not make directory for $file") unless -d dirname $file;
-  open my $FH, '>', $file or $self->abort("Could not write $name to $file $!");
+  open my $FH, '>', $file or $self->abort("Could not write $name to $file: $!");
   print $FH $str;
   say "# Generated $file" unless $self->silent;
 }

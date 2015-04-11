@@ -1,7 +1,9 @@
 Changelog for App::git::ship
 
-0.16
+0.16 Not Released
        * Will also mark [A-Z]+ as private methods in pod_coverage_ok() test
+       * Add Test::CPAN::Changes to t/00-basic.t
+       * Will generate CPAN::Changes::Spec compatible Changes file
 
 0.15     Fri Apr 10 08:47:51 2015
        * Will display STDERR/STDOUT if $exit_code != 0 and silent() is set
