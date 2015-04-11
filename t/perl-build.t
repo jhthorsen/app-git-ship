@@ -36,9 +36,9 @@ t::Util->goto_workdir('perl-build', 0);
     t::Util->test_file('Makefile.PL', qr{EXE_FILES => \[qw\( bin/e-x-e \)\]}s);
   }
 
-  t::Util->test_file('Changes', qr{^[\d\.]+$}m);
+  t::Util->test_file('Changes', qr/^[\d\.]+ Not Released$/m);
   $app->_timestamp_to_changes for 1..3; # need to see what happens if you run multiple times
-  t::Util->test_file('Changes', qr{^[\d\.]+\s+\w+\s}m);
+  t::Util->test_file('Changes', qr/^[\d\.]+\s+\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/m);
 
   create_main_module();
   $app->_update_version_info;

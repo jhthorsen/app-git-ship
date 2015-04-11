@@ -1,7 +1,7 @@
 #!/usr/bin/env perl
 use Applify;
 
-documentation 'App::git::ship::Manual';
+documentation 'App::git::ship';
 extends 'App::git::ship';
 version 'App::git::ship';
 

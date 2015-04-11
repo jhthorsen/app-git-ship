@@ -1,73 +1,76 @@
-Changelog for App::git::ship
+Revision history for perl distribution App-git-ship
 
 0.16 Not Released
-       * Will also mark [A-Z]+ as private methods in pod_coverage_ok() test
-       * Add Test::CPAN::Changes to t/00-basic.t
-       * Will generate CPAN::Changes::Spec compatible Changes file
+ - Add Test::CPAN::Changes to t/00-basic.t
+ - Change default timestamp in Changes file
+ - Will also mark [A-Z]+ as private methods in pod_coverage_ok() test
+ - Will generate CPAN::Changes::Spec compatible Changes file
 
-0.15     Fri Apr 10 08:47:51 2015
-       * Will display STDERR/STDOUT if $exit_code != 0 and silent() is set
+0.15 2015-04-10T08:47:51+0200
+ - Will display STDERR/STDOUT if $exit_code != 0 and silent() is set
 
-0.14     Wed Apr  8 13:20:39 2015
-       * Change "git init" to "git init-db"
-         http://git-scm.com/docs/git-init-db/1.5.0
+0.14 2015-04-08T13:20:39+0200
+ - Change "git init" to "git init-db"
+   http://git-scm.com/docs/git-init-db/1.5.0
 
-0.1301   Mon Apr  6 08:53:29 2015
-       * Fix t/repository.t
+0.1301 2015-04-06T08:53:29+0200
+ - Fix t/repository.t
 
-0.13     Sun Apr  5 23:32:08 2015
-       * Fix parsing http repository url
+0.13 2015-04-05T23:32:08+0200
+ - Fix parsing http repository url
 
-0.12     Thu Aug 21 08:58:43 2014
-       * Add command test_coverage()
+0.12 2014-08-21T08:58:43+0200
+ - Add command test_coverage()
 
-0.11     Sun Aug 17 12:36:37 2014
-       * Improved documentation
-       * Will include the default skip file on creation time of MANIFEST.SKIP
+0.11 2014-08-17T12:36:37+0200
+ - Improved documentation
+ - Will include the default skip file on creation time of MANIFEST.SKIP
 
-0.10     Sun Aug 10 11:23:22 2014
-       * Rename "init" to "start"
-       * Remove --push application switch
+0.10 2014-08-10T11:23:22+0200
+ - Rename "init" to "start"
+ - Remove --push application switch
 
-0.09     Thu Jul 31 12:17:40 2014
-       * Try to avoid failing cpantesters test "!! 'git init' failed: 1"
+0.09 2014-07-31T12:17:40+0200
+ - Try to avoid failing cpantesters test "!! 'git init' failed: 1"
 
-0.08     Tue Jul 22 16:51:02 2014
-       * Add support for CHANGELOG.md and README.md
-       * Add support for custom changelog timestamp
-       * Add support for "#" in config file, using "\#"
-       * Add support for executeables in ./script/ directory
-       * Add support for after/before build and ship hooks
+0.08 2014-07-22T16:51:02+0200
+ - Add support for CHANGELOG.md and README.md
+ - Add support for custom changelog timestamp
+ - Add support for "#" in config file, using "\#"
+ - Add support for executeables in ./script/ directory
+ - Add support for after/before build and ship hooks
 
-0.07     Mon Jul 21 06:48:09 2014
-       * Try to fix failing system() test from cpantesters
-         http://www.cpantesters.org/cpan/report/00a82db4-103e-11e4-84c4-fc77f9652e90
+0.07 2014-07-21T06:48:09+0200
+ - Try to fix failing system() test from cpantesters
+   http://www.cpantesters.org/cpan/report/00a82db4-103e-11e4-84c4-fc77f9652
+   e90
 
-0.06     Mon Jul 14 08:14:06 2014
-       * Add missing dependencies: Module::CPANfile and ExtUtils::MakeMaker
+0.06 2014-07-14T08:14:06+0200
+ - Add missing dependencies: Module::CPANfile and ExtUtils::MakeMaker
 
-0.05     Mon Jul  7 22:46:49 2014
-       * Will also push the current branch to origin
-       * Fix CPAN testers errors
-         http://www.cpantesters.org/cpan/report/417de3d8-6bf5-1014-af60-f4e550131f1b
+0.05 2014-07-07T22:46:49+0200
+ - Will also push the current branch to origin
+ - Fix CPAN testers errors
+   http://www.cpantesters.org/cpan/report/417de3d8-6bf5-1014-af60-f4e550131
+   f1b
 
-0.04     Sun Jul  6 15:13:11 2014
-       * Require perl 5.14, because of "Non-destructive substitution", s///r
-       * Add --version switch to git-ship
+0.04 2014-07-06T15:13:11+0200
+ - Require perl 5.14, because of "Non-destructive substitution", s///r
+ - Add --version switch to git-ship
 
-0.03     Sun Jul  6 14:50:51 2014
-       * Fix bad CPAN release
+0.03 2014-07-06T14:50:51+0200
+ - Fix bad CPAN release
 
-0.02     Sun Jul  6 14:00:00 2014
-       * Need to run ship twice: One for build, and one for ship
-       * Use the default MANIFEST.SKIP file in addition to custom rules
-       * Add "clean" for Perl project
-       * Add Makefile.PL and README to git repository on build
-       * Add EXE_FILES to Makefile.PL
-       * Fix MANIFEST.SKIP to make a proper release
+0.02 2014-07-06T14:00:00+0200
+ - Need to run ship twice: One for build, and one for ship
+ - Use the default MANIFEST.SKIP file in addition to custom rules
+ - Add "clean" for Perl project
+ - Add Makefile.PL and README to git repository on build
+ - Add EXE_FILES to Makefile.PL
+ - Fix MANIFEST.SKIP to make a proper release
 
-0.01     Sat Jul  5 15:16:30 2014
-       * Add basic init, build and ship for Perl project
-       * Add basic init for any project
-       * Add detection for Perl projects
+0.01 2014-07-05T15:16:30+0200
+ - Add basic init, build and ship for Perl project
+ - Add basic init for any project
+ - Add detection for Perl projects
 

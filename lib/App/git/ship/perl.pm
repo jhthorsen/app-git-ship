@@ -95,6 +95,8 @@ has _cpanfile => sub { Module::CPANfile->load; };
 
 =head1 METHODS
 
+  $ git ship build
+
 =head2 build
 
 Used to build a Perl distribution by running through these steps:
@@ -185,6 +187,8 @@ sub can_handle_project {
 
 =head2 clean
 
+  $ git ship clean
+
 Used to clean out build files:
 
 Makefile, Makefile.old, MANIFEST, MYMETA.json, MYMETA.yml, Changes.bak, META.json
@@ -233,6 +237,8 @@ sub exe_files {
 }
 
 =head2 ship
+
+  $ git ship
 
 Used to ship a Perl distribution by running through these steps:
 
@@ -301,6 +307,8 @@ sub ship {
 
 =head2 start
 
+  $ git ship start
+
 Used to create main module file template and generate C<cpanfile>, C<Changes>,
 C<MANIFEST.SKIP> and C<t/00-basic.t>.
 
@@ -308,7 +316,7 @@ C<MANIFEST.SKIP> and C<t/00-basic.t>.
 
 sub start {
   my $self = shift;
-  my $changelog;
+  my $changelog = $self->_filename('changelog');
 
   if (my $file = $_[0]) {
     $file = File::Spec->catfile(lib => $file) unless $file =~ m!^.?lib!;
@@ -321,7 +329,6 @@ sub start {
   }
 
   symlink $self->main_module_path, 'README.pod' unless -e 'README.pod';
-  $changelog = $self->_filename('changelog');
 
   $self->SUPER::start(@_);
   $self->render('cpanfile');
@@ -356,6 +363,29 @@ sub test_coverage {
   $self->system(qw( cover -delete ));
   $self->system(qw( prove -l ));
   $self->system(qw( cover ));
+}
+
+=head2 update
+
+  $ git ship update
+
+Action for updating the basic repo files.
+
+=cut
+
+sub update {
+  my $self = shift;
+  my $changes = $self->_filename('changelog');
+  my $readme = $self->_filename('readme');
+
+  $self->abort("Cannot update with .git directory. Forgot to run 'git ship start'?") unless -d '.git';
+
+  symlink $self->main_module_path, 'README.pod' unless -e 'README.pod';
+  $self->_render_makefile_pl;
+  $self->_update_changes if $changes eq 'Changes';
+  $self->render('t/00-basic.t', {force => 1});
+  $self->system(sprintf '%s %s > %s', 'perldoc -tT', $self->main_module_path, $readme) if $readme eq 'README';
+  $self;
 }
 
 sub _author {
@@ -455,7 +485,7 @@ sub _timestamp_to_changes {
 
   $release_line = sub {
     my $v = shift;
-    my $str = $self->config->{new_version_format} || '%-7v  %a %b %e %H:%M:%S %Y';
+    my $str = $self->config->{new_version_format} || '%v %Y-%m-%dT%H:%M:%S%z';
     $str =~ s!(%-?\d*)v!{ sprintf "${1}s", $v }!e;
     setlocale LC_TIME, 'C';
     $str = strftime $str, localtime;
@@ -466,12 +496,28 @@ sub _timestamp_to_changes {
   local @ARGV = $changelog;
   local $^I = '';
   while (<>) {
-    $self->next_version($1) if s/^$VERSION_RE\s*$/{ $release_line->($1) }/e;
+    $self->next_version($1) if s/^$VERSION_RE\s*(Not Released)?$/{ $release_line->($1) }/e;
     print; # print back to same file
   }
 
   say '# Building version ', $self->next_version unless $self->silent;
   $self->abort('Unable to add timestamp to ./%s', $changelog) unless $self->next_version;
+}
+
+sub _update_changes {
+  my $self = shift;
+  my $changes;
+
+  unless (eval "require CPAN::Changes; 1") {
+    say "# Channge update ./Changes without CPAN::Changes" unless $self->silent;
+    return;
+  }
+
+  $changes = CPAN::Changes->load('Changes');
+  $changes->preamble('Revision history for perl distribution ' .($self->project_name =~ s!::!-!gr));
+  open my $FH, '>', 'Changes' or $self->abort("Could not write CPAN::Changes to Changes: $!");
+  print $FH $changes->serialize;
+  say "# Generated Changes" unless $self->silent;
 }
 
 sub _update_version_info {
@@ -527,7 +573,7 @@ __DATA__
 requires "perl" => "5.10.0";
 test_requires "Test::More" => "0.88";
 @@ Changes
-Revision history for perl module <%= $self->project_name %>
+Revision history for perl distribution <%= $self->project_name =~ s!::!-!gr %>
 
 0.01 Not Released
  - Started project

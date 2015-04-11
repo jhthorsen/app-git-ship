@@ -47,7 +47,7 @@ my $workdir = Cwd::getcwd;
 
   t::Util->test_file(
     'Changes',
-    qr{^Changelog for Perl::Start},
+    qr{^Revision history for perl distribution Perl-Start},
   );
 
   t::Util->test_file(
@@ -64,7 +64,7 @@ my $workdir = Cwd::getcwd;
     File::Spec->catfile(qw(t 00-basic.t )),
     qr{ok eval "use \$module; 1"},
     qr{Test::Pod::pod_file_ok\(\$file\)},
-    qr{Test::Pod::Coverage::pod_coverage_ok\(\$module\)},
+    qr{Test::Pod::Coverage::pod_coverage_ok\(\$module},
   );
 }
 
