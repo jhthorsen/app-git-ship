@@ -284,7 +284,7 @@ sub ship {
 
   unless ($dist_file) {
     $self->build;
-    $self->abort("Project built. Run 'git ship' again to post to CPAN and alien repostitory.");
+    $self->abort("Project built. Run 'git ship' again to post dist to CPAN and remote repostitory.");
   }
   unless ($self->next_version) {
     close ARGV;

@@ -224,6 +224,7 @@ use File::Basename 'dirname';
 use File::Find ();
 use File::Path 'make_path';
 use File::Spec ();
+use IPC::Run3 ();
 
 use constant DEBUG => $ENV{GIT_SHIP_DEBUG} || 0;
 
@@ -573,45 +574,30 @@ Same as perl's C<system()>, but provides error handling and logging.
 
 sub system {
   my ($self, $program, @args) = @_;
-  my $silent = $self->silent && pipe my $STDOUT_READ, my $STDOUT_WRITE;
-  my $output = '';
-  my ($exit_code, $kid);
+  my @fh = (undef);
+  my $exit_code;
 
-  if (!$silent) {
+  if ($self->silent) {
+    my $output = '';
+    push @fh, (\$output, \$output);
+  }
+  else {
     my $log = "$program @args";
     $log =~ s!\n\r?!\\n!g;
     say "\$ $log";
   }
 
-  local $SIG{CHLD} = sub {
-    my $pid = waitpid -1, 0;
-    return unless $pid == $kid;
-    $exit_code = $?;
-    close $STDOUT_READ if $STDOUT_READ;
-  };
+  IPC::Run3::run3(@args ? [$program => @args] : $program, @fh);
+  $exit_code = $? >> 8;
+  return $self unless $exit_code;
 
-  $kid = fork // $self->abort("Could not fork $program @args: $!");
-
-  # parent
-  if ($kid) {
-    local $_;
-    $output .= $_ while $STDOUT_READ and defined($_ = readline $STDOUT_READ);
-    $exit_code = $? >> 8;
-    return $self unless $exit_code;
-    chomp $output;
-    $output = " ($output)" if length $output;
-    $self->abort("'$program @args' failed: $exit_code$output");
+  if ($self->silent) {
+    chomp $fh[1];
+    $self->abort("'$program @args' failed: $exit_code (${$fh[1]})");
   }
-
-  # child
-  if ($silent) {
-    close $STDOUT_READ;
-    open STDOUT, '>&' . fileno $STDOUT_WRITE or exit $!;
-    open STDERR, '>&' . fileno $STDOUT_WRITE or exit $!;
+  else {
+    $self->abort("'$program @args' failed: $exit_code");
   }
-
-  { exec $program => @args }
-  { die "Exec $program @args failed: $!" }
 }
 
 =head2 test_coverage

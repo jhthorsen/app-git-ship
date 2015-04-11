@@ -5,6 +5,7 @@ Revision history for perl distribution App-git-ship
  - Change default timestamp in Changes file
  - Will also mark [A-Z]+ as private methods in pod_coverage_ok() test
  - Will generate CPAN::Changes::Spec compatible Changes file
+ - Fix "readline() on closed filehandle $STDOUT_READ"
 
 0.15 2015-04-10T08:47:51+0200
  - Will display STDERR/STDOUT if $exit_code != 0 and silent() is set
