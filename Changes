@@ -1,7 +1,9 @@
 Revision history for perl distribution App-git-ship
 
-0.16 2015-04-11T11:43:48+0200
+0.17 Not Released
+ - Fix skip of Test::CPAN::Changes test i t/00-basic.t
 
+0.16 2015-04-11T11:43:48+0200
  - Add Test::CPAN::Changes to t/00-basic.t
  - Change default timestamp in Changes file
  - Will also mark [A-Z]+ as private methods in pod_coverage_ok() test

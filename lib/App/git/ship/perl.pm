@@ -618,7 +618,7 @@ if(!eval 'use Test::Pod::Coverage; 1') {
   *Test::Pod::Coverage::pod_coverage_ok = sub { SKIP: { skip "pod_coverage_ok(@_) (Test::Pod::Coverage is required)", 1 } };
 }
 if(!eval 'use Test::CPAN::Changes; 1') {
-  *Test::CPAN::Changes::changes_ok = sub { SKIP: { skip "changes_ok(@_) (Test::CPAN::Changes is required)", 1 } };
+  *Test::CPAN::Changes::changes_file_ok = sub { SKIP: { skip "changes_ok(@_) (Test::CPAN::Changes is required)", 4 } };
 }
 
 find(
