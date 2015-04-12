@@ -1,6 +1,7 @@
 Revision history for perl distribution App-git-ship
 
-0.17 Not Released
+0.17 2015-04-12T11:25:29+0200
+
  - Fix skip of Test::CPAN::Changes test i t/00-basic.t
 
 0.16 2015-04-11T11:43:48+0200
