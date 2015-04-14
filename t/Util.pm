@@ -85,6 +85,7 @@ sub test_git {
   plan skip_all => "Invalid git: $git" unless $git =~ qr{^[\w\/-]+$};
   $output = qx{$git --version 2>/dev/null};
   plan skip_all => "Invalid git: $output" unless $output =~ qr{\b\s+version\s+\d};
+  plan skip_all => "Unsupported git version: $output" if $output =~ qr{\s1\.4};
   diag "git --version: $output" unless $output =~ /\b(1\.9|2\.[0123])/;
 }
 

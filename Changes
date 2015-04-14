@@ -1,7 +1,11 @@
 Revision history for perl distribution App-git-ship
 
-0.17 2015-04-12T11:25:29+0200
+0.18 2015-04-14T08:04:24+0200
 
+ - git 1.4.x is not supported (patches are welcome)
+   "git commit --amend -C HEAD' failed: 1 (Only one of -c/-C/-F can be used.)"
+
+0.17 2015-04-12T11:25:29+0200
  - Fix skip of Test::CPAN::Changes test i t/00-basic.t
 
 0.16 2015-04-11T11:43:48+0200
