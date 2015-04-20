@@ -490,13 +490,13 @@ sub _timestamp_to_changes {
     setlocale LC_TIME, 'C';
     $str = strftime $str, localtime;
     setlocale LC_TIME, $loc;
-    return "$str\n";
+    return $str;
   };
 
   local @ARGV = $changelog;
   local $^I = '';
   while (<>) {
-    $self->next_version($1) if s/^$VERSION_RE\s*(Not Released)?$/{ $release_line->($1) }/e;
+    $self->next_version($1) if s/^$VERSION_RE\x20*(?:Not Released)?\x20*([\r\n]+)/{ $release_line->($1) . $2 }/e;
     print; # print back to same file
   }
 

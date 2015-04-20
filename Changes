@@ -1,7 +1,9 @@
 Revision history for perl distribution App-git-ship
 
-0.18 2015-04-14T08:04:24+0200
+0.19 Not Released
+ - Fix double newline in Changes
 
+0.18 2015-04-14T08:04:24+0200
  - git 1.4.x is not supported (patches are welcome)
    "git commit --amend -C HEAD' failed: 1 (Only one of -c/-C/-F can be used.)"
 

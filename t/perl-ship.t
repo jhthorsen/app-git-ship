@@ -47,11 +47,13 @@ DUMMY
   eval { $app->ship };
   like $@, qr{Unable to add timestamp}, 'Unable to add timestamp';
 
-  local @ARGV = ('Changes');
-  local $^I = '';
-  while (<>) {
-    print "0.02\n       * Some other cool feature\n\n" if $. == 3;
-    print;
+  {
+    local @ARGV = ('Changes');
+    local $^I = '';
+    while (<>) {
+      print "0.02 Not Released\n - Some other cool feature\n\n" if $. == 3;
+      print;
+    }
   }
 
   $app->build->ship;
