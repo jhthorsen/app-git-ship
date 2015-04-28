@@ -1,7 +1,10 @@
 Revision history for perl distribution App-git-ship
 
-0.19 2015-04-20T09:01:23+0200
+0.20 Not Released
+ - Add support for running xt/*.t tests when checking out a repo
+   using "make test"
 
+0.19 2015-04-20T09:01:23+0200
  - Fix double newline in Changes
 
 0.18 2015-04-14T08:04:24+0200

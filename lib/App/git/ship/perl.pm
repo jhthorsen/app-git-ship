@@ -596,7 +596,7 @@ WriteMakefile(
   },
   BUILD_REQUIRES => <%= $_[1]->{BUILD_REQUIRES} %>,
   PREREQ_PM => <%= $_[1]->{PREREQ_PM} %>,
-  test => { TESTS => 't/*.t' },
+  test => {TESTS => (-e 'META.yml' ? 't/*.t' : 't/*.t xt/*.t')},
 );
 @@ MANIFEST.SKIP
 <%= $_[0]->_include_mskip_file %>
