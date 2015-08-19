@@ -509,7 +509,7 @@ sub _update_changes {
   my $changes;
 
   unless (eval "require CPAN::Changes; 1") {
-    say "# Channge update ./Changes without CPAN::Changes" unless $self->silent;
+    say "# Cannot update './Changes' without CPAN::Changes. Install using cpanm CPAN::Changes" unless $self->silent;
     return;
   }
 
