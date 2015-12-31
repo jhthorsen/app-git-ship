@@ -18,9 +18,9 @@ get in your (or any random contributor) way. Problems should be solved with
 sane defaults according to standard rules instead of enforcing more rules.
 
 This project can also L</start> (create) a new project, just L</build> (prepare
-for L<shipping|/ship>) and L</clean> projects.
+for L<shipping|/ship>), and L</clean> projects.
 
-L<App::git::ship> differ from other tools like L<dzil|Dist::Zilla> by not
+L<App::git::ship> differs from other tools like L<dzil|Dist::Zilla> by not
 enforcing new ways to do things, but rather incorporate with the existing
 way. Example structure and how L<App::git::ship> works on your files:
 
@@ -35,12 +35,12 @@ be used by L<Carton> and other tools, so generating L<cpanfile> from
 Makefile.PL would simply not be possible. Other data used to generate
 Makefile.PL are: 
 
-"NAME", "LICENSE" will have values from L</project_name> and L</license>.
+"NAME" and "LICENSE" will have values from L</project_name> and L</license>.
 "AUTHOR" will have the name and email from the last git committer.
 "ABSTRACT_FROM" and "VERSION_FROM" are fetched from the
 L<main_module_path|App::git::ship::perl/main_module_path>.
-"EXE_FILES" will be the files in C<bin/> or C<script/> which is executable.
-"META_MERGE" will use data from L</bugtracker>, L</homepage> andL</repository>.
+"EXE_FILES" will be the files in C<bin/> and C<script/> which are executable.
+"META_MERGE" will use data from L</bugtracker>, L</homepage>, andL</repository>.
 
 =item * my-app/CHANGELOG.md or my-app/Changes
 
@@ -54,18 +54,19 @@ Will be updated with the main module documentation using the command below:
 
   $ perldoc -tT $main_module_path > README;
 
-If you don't like this format, you can create C<README.md> instead. The
-presense of that file will prevent "my-app/README" from getting generated.
+If you don't like this format, you can create and write C<README.md> manually
+instead. The presense of that file will prevent "my-app/README" from getting
+generated.
 
 =item * my-app/lib/My/App.pm
 
-This L<file|App::git::ship::perl/main_module_path> will be updated with
+This L<file|App::git::ship::perl/main_module_path> will be updated with the
 version number from the Changes file.
 
 =item * .gitignore and MANIFEST.SKIP
 
 Unless these files exist, they will be generated from a template which skip
-the most common files. The default content of these files might change over
+the most common files. The default content of these two files might change over
 time if new temp files are created by new editors or some other formats come
 along.
 
@@ -83,6 +84,7 @@ customized afterwards and will not be overwritten.
 
   # Set up .ship config and basic repo files
   $ cd my-project
+  $ echo 'class = App::git::ship::perl' > .ship.conf
   $ git ship start
 
   # make changes
@@ -97,7 +99,7 @@ customized afterwards and will not be overwritten.
 =head2 New project
 
   $ git ship -h
-  $ git start My/Project.pm
+  $ git ship start My/Project.pm
   $ cd my-project
 
   # make changes
@@ -194,7 +196,7 @@ or defaults to "unknown" if no project name could be found. Example:
 =item * Comments
 
 Comments are made by adding the hash symbol (#) followed by text. If you want
-to use the "#" as a value, it need to be escaped using "\#". Examples:
+to use the "#" as a value, it needs to be escaped using "\#". Examples:
 
   # This whole line is skipped
   parameter = 123 # The end of this line is skipped
@@ -209,7 +211,7 @@ programs that runs in your shell. Example L<.ship|/CONFIG> file with hooks:
   after_build = rm -r lib/My/App/templates lib/My/App/public
   after_ship = cat Changes | mail -s "Changes for My::App" all@my-app.com
 
-Possible hook are C<before_build>, C<after_build>, C<before_ship> and C<after_ship>.
+Possible hooks are C<before_build>, C<after_build>, C<before_ship>, and C<after_ship>.
 
 =back
 
@@ -266,7 +268,7 @@ This attribute can be read from L</config>.
   $bool = $self->silent;
   $self = $self->silent($bool);
 
-Set this to true if you want less logging. By default it silent is false.
+Set this to true if you want less logging. By default silent is false.
 
 =cut
 
@@ -371,7 +373,7 @@ sub attr {
 =head2 build
 
 This method builds the project. The default behavior is to L</abort>.
-Need to be overridden in the subclass.
+Needs to be overridden in the subclass.
 
 =cut
 
@@ -467,7 +469,7 @@ sub new {
   $self->render($file, \%args);
 
 Used to render a template by the name C<$file> to a C<$file>. The template
-need to be defined in the C<DATA> section of the current class or one of
+needs to be defined in the C<DATA> section of the current class or one of
 the super classes.
 
 =cut
@@ -539,7 +541,7 @@ URL to the project homepage. Will be the the L</repository> URL, without ".git".
 
 =item * license
 
-The name of the license. Default to L<artistic_2|http://www.opensource.org/licenses/artistic-license-2.0>.
+The name of the license. Defaults to L<artistic_2|http://www.opensource.org/licenses/artistic-license-2.0>.
 
 See L<CPAN::Meta::Spec/license> for alternatives.
 
@@ -602,8 +604,8 @@ sub system {
 
 =head2 test_coverage
 
-This method check test coverage for the project. The default behavior is to
-L</abort>. Need to be overridden in the subclass.
+This method checks test coverage for the project. The default behavior is to
+L</abort>. Needs to be overridden in the subclass.
 
 =cut
 
@@ -619,7 +621,7 @@ sub test_coverage {
 Called when this class is used. It will automatically enable L<strict>,
 L<warnings>, L<utf8> and Perl 5.10 features.
 
-C<-base> will also make sure the calling class inherit from
+C<-base> will also make sure the calling class inherits from
 L<App::git::ship> and gets the L<has|/attr> function.
 
 =cut
