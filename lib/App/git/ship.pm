@@ -560,8 +560,8 @@ sub start {
   $self->system(qw( git init-db )) unless -d '.git' and @_;
   $self->render('.ship.conf', { homepage => $self->repository =~ s!\.git$!!r });
   $self->render('.gitignore');
-  $self->system(qw( git add . ));
-  $self->system(qw( git commit -m Initialized )) if @_;
+  $self->system(qw(git add .));
+  $self->system(qw(git commit -m), "git ship start") if @_;
   delete $self->{config}; # regenerate config from .ship.conf
   $self;
 }
@@ -589,6 +589,7 @@ sub system {
     say "\$ $log";
   }
 
+  warn "[ship]\$ $program @args\n" if DEBUG == 2;
   IPC::Run3::run3(@args ? [$program => @args] : $program, @fh);
   $exit_code = $? >> 8;
   return $self unless $exit_code;

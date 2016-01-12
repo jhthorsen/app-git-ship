@@ -1,6 +1,7 @@
 Revision history for perl distribution App-git-ship
 
 0.20 Not Released
+ - Fix "git ship start" on existing project #5
  - Add support for running xt/*.t tests when checking out a repo
    using "make test"
 

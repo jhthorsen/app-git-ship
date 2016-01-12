@@ -321,11 +321,13 @@ sub start {
   if (my $file = $_[0]) {
     $file = File::Spec->catfile(lib => $file) unless $file =~ m!^.?lib!;
     $self->config({})->main_module_path($file);
-    my $work_dir = lc($self->project_name) =~ s!::!-!gr;
-    mkdir $work_dir;
-    chdir $work_dir or $self->abort("Could not chdir to $work_dir");
-    make_path dirname $self->main_module_path;
-    open my $MAINMODULE, '>>', $self->main_module_path or $self->abort("Could not create %s", $self->main_module_path);
+    unless (-e $file) {
+      my $work_dir = lc($self->project_name) =~ s!::!-!gr;
+      mkdir $work_dir;
+      chdir $work_dir or $self->abort("Could not chdir to $work_dir");
+      make_path dirname $self->main_module_path;
+      open my $MAINMODULE, '>>', $self->main_module_path or $self->abort("Could not create %s", $self->main_module_path);
+    }
   }
 
   symlink $self->main_module_path, 'README.pod' unless -e 'README.pod';
@@ -335,8 +337,8 @@ sub start {
   $self->render('Changes') if $changelog eq 'Changes';
   $self->render('MANIFEST.SKIP');
   $self->render('t/00-basic.t');
-  $self->system(qw( git add cpanfile MANIFEST.SKIP t ), $changelog);
-  $self->system(qw( git commit --amend -C HEAD )) if @_;
+  $self->system(qw(git add cpanfile MANIFEST.SKIP t), $changelog);
+  $self->system(qw(git commit --amend -C HEAD --allow-empty)) if @_;
   $self;
 }
 
