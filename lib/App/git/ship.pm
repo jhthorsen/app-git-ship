@@ -1,4 +1,295 @@
 package App::git::ship;
+use feature ':5.10';
+use strict;
+use warnings;
+use Carp;
+use Data::Dumper ();
+use File::Basename 'dirname';
+use File::Find ();
+use File::Path 'make_path';
+use File::Spec ();
+use IPC::Run3  ();
+
+use constant DEBUG => $ENV{GIT_SHIP_DEBUG} || 0;
+
+our $VERSION = '0.21';
+
+my %DATA;
+
+__PACKAGE__->attr(
+  config => sub {
+    my $self = shift;
+    my $file = $ENV{GIT_SHIP_CONFIG} || '.ship.conf';
+    my $config;
+
+    open my $CFG, '<', $file or $self->abort("Read $file: $!");
+
+    while (<$CFG>) {
+      chomp;
+      warn "[ship::config] $_\n" if DEBUG == 2;
+      m/\A\s*(?:\#|$)/ and next;    # comments
+      s/\s+(?<!\\)\#\s.*$//;        # remove inline comments
+      m/^\s*([^\=\s][^\=]*?)\s*=\s*(.*?)\s*$/ or next;
+      my ($k, $v) = ($1, $2);
+      $config->{$k} = $v;
+      $config->{$k} =~ s!\\\#!#!g;
+      warn "[ship::config] $1 = $2\n" if DEBUG;
+    }
+
+    return $config;
+  }
+);
+
+__PACKAGE__->attr(next_version => sub {0});
+
+__PACKAGE__->attr(
+  project_name => sub {
+    my $self = shift;
+    return $self->config->{project_name} if $self->config->{project_name};
+    return 'unknown';
+  }
+);
+
+__PACKAGE__->attr(
+  repository => sub {
+    my $self = shift;
+    my $repository;
+
+    open my $REPOSITORIES, '-|', q( git remote -v ) or $self->abort("git remote -v: $!");
+
+    while (<$REPOSITORIES>) {
+      next unless /^origin\s+(\S+).*push/;
+      $repository = $1;
+      last;
+    }
+
+    $repository ||= lc sprintf 'https://github.com/%s/%s', scalar(getpwuid $<),
+      $self->project_name =~ s!::!-!gr;
+    $repository =~ s!^[^:]+:!https://github.com/! unless $repository =~ /^http/;
+    warn "[ship::repository] $repository\n" if DEBUG;
+    $repository;
+  }
+);
+
+__PACKAGE__->attr(silent => sub { $ENV{GIT_SHIP_SILENT} // 0 });
+
+sub abort {
+  my ($self, $format, @args) = @_;
+  my $message = @args ? sprintf $format, @args : $format;
+
+  Carp::confess("!! $message") if DEBUG;
+  die "!! $message\n";
+}
+
+sub attr {
+  my ($self, $name, $default) = @_;
+  my $class = ref $self || $self;
+  my $code = "";
+
+  $code .= "package $class; sub $name {";
+  $code .= "return \$_[0]->{$name} if \@_ == 1 and exists \$_[0]->{$name};";
+  $code .= "return \$_[0]->{$name} = \$_[0]->\$default if \@_ == 1;";
+  $code .= "\$_[0]->{$name} = \$_[1] if \@_ == 2;";
+  $code .= '$_[0];}';
+
+  eval "$code;1" or die "$code: $@";
+
+  return $self;
+}
+
+sub build {
+  $_[0]->abort('build() is not available for %s', ref $_[0]);
+}
+
+sub can_handle_project { $_[1] ? 0 : 1 }
+
+sub detect {
+  my $self = shift;
+  my $file = 'auto-detect';
+
+  if (!@_ and $self->config->{class}) {
+    my $class = $self->config->{class};
+    eval "require $class;1" or $self->abort("Could not load $class: $@");
+    return $class;
+  }
+  else {
+    $file = shift;
+    require Module::Find;
+    for my $class (sort { length $b <=> length $a } Module::Find::findallmod(__PACKAGE__)) {
+      eval "require $class;1" or next;
+      next unless $class->can('can_handle_project');
+      warn "[ship::detect] $class->can_handle_project($file)\n" if DEBUG;
+      return $class if $class->can_handle_project($file);
+    }
+  }
+
+  $self->abort("Could not figure out what kind of project this is from '$file'");
+}
+
+sub run_hook {
+  my ($self, $name) = @_;
+  my $cmd = $self->config->{$name} or return;
+  $self->system($cmd);
+}
+
+sub new {
+  my $class = shift;
+  my $self = bless @_ ? @_ > 1 ? {@_} : {%{$_[0]}} : {}, ref $class || $class;
+
+  open $self->{STDOUT}, '>&STDOUT';
+  open $self->{STDERR}, '>&STDERR';
+
+  $self;
+}
+
+sub render {
+  my ($self, $name, $args) = @_;
+  my $file = File::Spec->catfile(split '/', $name);
+  my $class = ref $self;
+  my $str;
+
+  if (-e $file and !$args->{force}) {
+    say "# $file exists" unless $self->silent;
+    return $self;
+  }
+
+  no strict 'refs';
+  for my $c ($class, @{"$class\::ISA"}) {
+    $str = $c->_data->{$name} and last;
+  }
+
+  $self->abort("Could not find template for $name") unless $str;
+
+  local @_ = ($self, $args);
+  $str =~ s!<%=(.+?)%>!{
+            my $x = eval $1 // die DEBUG ? "($1) => $@" : $@;
+            ref $x ? Data::Dumper->new([$x])->Indent(1)->Terse(1)->Sortkeys(1)->Dump : $x;
+          }!sge;
+
+  return $str if $args->{to_string};
+  make_path dirname($file)
+    or $self->abort("Could not make directory for $file")
+    unless -d dirname $file;
+  open my $FH, '>', $file or $self->abort("Could not write $name to $file: $!");
+  print $FH $str;
+  say "# Generated $file" unless $self->silent;
+}
+
+sub ship {
+  my $self = shift;
+  my ($branch) = qx(git branch) =~ /\* (.+)$/m;
+
+  $self->abort("Cannot ship without a current branch") unless $branch;
+  $self->abort("Cannot ship without a version number") unless $self->next_version;
+  $self->system(qw( git push origin ), $branch);
+  $self->system(qw( git tag ) => $self->next_version);
+  $self->system(qw( git push --tags origin ));
+}
+
+sub start {
+  my $self = shift;
+
+  if (@_ and ref($self) eq __PACKAGE__) {
+    return $self->detect($_[0])->new($self)->start(@_);
+  }
+
+  $self->config({});    # make sure repository() does not die
+  $self->system(qw( git init-db )) unless -d '.git' and @_;
+  $self->render('.ship.conf', {homepage => $self->repository =~ s!\.git$!!r});
+  $self->render('.gitignore');
+  $self->system(qw(git add .));
+  $self->system(qw(git commit -a -m), "git ship start") if @_;
+  delete $self->{config};    # regenerate config from .ship.conf
+  $self;
+}
+
+sub system {
+  my ($self, $program, @args) = @_;
+  my @fh = (undef);
+  my $exit_code;
+
+  if ($self->silent) {
+    my $output = '';
+    push @fh, (\$output, \$output);
+  }
+  else {
+    my $log = "$program @args";
+    $log =~ s!\n\r?!\\n!g;
+    say "\$ $log";
+  }
+
+  warn "[ship]\$ $program @args\n" if DEBUG == 2;
+  IPC::Run3::run3(@args ? [$program => @args] : $program, @fh);
+  $exit_code = $? >> 8;
+  return $self unless $exit_code;
+
+  if ($self->silent) {
+    chomp $fh[1];
+    $self->abort("'$program @args' failed: $exit_code (${$fh[1]})");
+  }
+  else {
+    $self->abort("'$program @args' failed: $exit_code");
+  }
+}
+
+sub test_coverage {
+  $_[0]->abort('test_coverage() is not available for %s', ref $_[0]);
+}
+
+sub import {
+  my ($class, $arg) = @_;
+  my $caller = caller;
+
+  if ($arg and ($arg eq '-base' or $arg =~ /::/)) {
+    no strict 'refs';
+    if ($arg eq '-base') {
+      push @{"${caller}::ISA"}, __PACKAGE__;
+    }
+    else {
+      eval "require $arg;1" or die $@;
+      push @{"${caller}::ISA"}, $arg;
+    }
+    *{"${caller}::has"} = sub { attr($caller, @_) };
+    *{"${caller}::DEBUG"} = \&DEBUG;
+  }
+
+  feature->import(':5.10');
+  strict->import;
+  warnings->import;
+}
+
+# Taken from Mojo::Loader
+sub _data {
+  my $class = shift;
+
+  return $DATA{$class} if $DATA{$class};
+  my $handle = do { no strict 'refs'; \*{"${class}::DATA"} };
+  return {} unless fileno $handle;
+  seek $handle, 0, 0;
+  my $data = join '', <$handle>;
+
+  # Ignore everything before __DATA__ (Windows will seek to start of file)
+  $data =~ s/^.*\n__DATA__\r?\n/\n/s;
+
+  # Ignore everything after __END__
+  $data =~ s/\n__END__\r?\n.*$/\n/s;
+
+  # Split files
+  (undef, my @files) = split /^@@\s*(.+?)\s*\r?\n/m, $data;
+
+  # Find data
+  my $all = $DATA{$class} = {};
+  while (@files) {
+    my $name = shift @files;
+    $all->{$name} = shift @files;
+  }
+
+  return $all;
+}
+
+1;
+
+=encoding utf8
 
 =head1 NAME
 
@@ -215,25 +506,6 @@ Possible hooks are C<before_build>, C<after_build>, C<before_ship>, and C<after_
 
 =back
 
-=cut
-
-use feature ':5.10';
-use strict;
-use warnings;
-use Carp;
-use Data::Dumper ();
-use File::Basename 'dirname';
-use File::Find ();
-use File::Path 'make_path';
-use File::Spec ();
-use IPC::Run3 ();
-
-use constant DEBUG => $ENV{GIT_SHIP_DEBUG} || 0;
-
-our $VERSION = '0.21';
-
-my %DATA;
-
 =head1 ATTRIBUTES
 
 =head2 config
@@ -270,58 +542,6 @@ This attribute can be read from L</config>.
 
 Set this to true if you want less logging. By default silent is false.
 
-=cut
-
-__PACKAGE__->attr(config => sub {
-  my $self = shift;
-  my $file = $ENV{GIT_SHIP_CONFIG} || '.ship.conf';
-  my $config;
-
-  open my $CFG, '<', $file or $self->abort("Read $file: $!");
-
-  while (<$CFG>) {
-    chomp;
-    warn "[ship::config] $_\n" if DEBUG == 2;
-    m/\A\s*(?:\#|$)/ and next; # comments
-    s/\s+(?<!\\)\#\s.*$//; # remove inline comments
-    m/^\s*([^\=\s][^\=]*?)\s*=\s*(.*?)\s*$/ or next;
-    my ($k, $v) = ($1, $2);
-    $config->{$k} = $v;
-    $config->{$k} =~ s!\\\#!#!g;
-    warn "[ship::config] $1 = $2\n" if DEBUG;
-  }
-
-  return $config;
-});
-
-__PACKAGE__->attr(next_version => sub { 0 });
-
-__PACKAGE__->attr(project_name => sub {
-  my $self = shift;
-  return $self->config->{project_name} if $self->config->{project_name};
-  return 'unknown';
-});
-
-__PACKAGE__->attr(repository => sub {
-  my $self = shift;
-  my $repository;
-
-  open my $REPOSITORIES, '-|', q( git remote -v ) or $self->abort("git remote -v: $!");
-
-  while (<$REPOSITORIES>) {
-    next unless /^origin\s+(\S+).*push/;
-    $repository = $1;
-    last;
-  }
-
-  $repository ||= lc sprintf 'https://github.com/%s/%s', scalar(getpwuid $<), $self->project_name =~ s!::!-!gr;
-  $repository =~ s!^[^:]+:!https://github.com/!  unless $repository =~ /^http/;
-  warn "[ship::repository] $repository\n" if DEBUG;
-  $repository;
-});
-
-__PACKAGE__->attr(silent => sub { $ENV{GIT_SHIP_SILENT} // 0 });
-
 =head1 METHODS
 
 =head2 abort
@@ -330,16 +550,6 @@ __PACKAGE__->attr(silent => sub { $ENV{GIT_SHIP_SILENT} // 0 });
   $self->abort($format, @args);
 
 Will abort the application run with an error message.
-
-=cut
-
-sub abort {
-  my ($self, $format, @args) = @_;
-  my $message = @args ? sprintf $format, @args : $format;
-
-  Carp::confess("!! $message") if DEBUG;
-  die "!! $message\n";
-}
 
 =head2 attr
 
@@ -352,34 +562,10 @@ or ...
 
 Used to create an attribute with a lazy builder.
 
-=cut
-
-sub attr {
-  my ($self, $name, $default) = @_;
-  my $class = ref $self || $self;
-  my $code = "";
-
-  $code .= "package $class; sub $name {";
-  $code .= "return \$_[0]->{$name} if \@_ == 1 and exists \$_[0]->{$name};";
-  $code .= "return \$_[0]->{$name} = \$_[0]->\$default if \@_ == 1;";
-  $code .= "\$_[0]->{$name} = \$_[1] if \@_ == 2;";
-  $code .= '$_[0];}';
-
-  eval "$code;1" or die "$code: $@";
-
-  return $self;
-}
-
 =head2 build
 
 This method builds the project. The default behavior is to L</abort>.
 Needs to be overridden in the subclass.
-
-=cut
-
-sub build {
-  $_[0]->abort('build() is not available for %s', ref $_[0]);
-}
 
 =head2 can_handle_project
 
@@ -391,10 +577,6 @@ true if this module can handle the given git project.
 This is a class method which gets a file as input to detect or have to
 auto-detect from current working directory.
 
-=cut
-
-sub can_handle_project { $_[1] ? 0 : 1 }
-
 =head2 detect
 
   $class = $self->detect;
@@ -403,31 +585,6 @@ sub can_handle_project { $_[1] ? 0 : 1 }
 Will detect the module which can be used to build the project. This
 can be read from the "class" key in L</config> or will in worse
 case default to L<App::git::ship>.
-
-=cut
-
-sub detect {
-  my $self = shift;
-  my $file = 'auto-detect';
-
-  if (!@_ and $self->config->{class}) {
-    my $class = $self->config->{class};
-    eval "require $class;1" or $self->abort("Could not load $class: $@");
-    return $class;
-  }
-  else {
-    $file = shift;
-    require Module::Find;
-    for my $class (sort { length $b <=> length $a } Module::Find::findallmod(__PACKAGE__)) {
-      eval "require $class;1" or next;
-      next unless $class->can('can_handle_project');
-      warn "[ship::detect] $class->can_handle_project($file)\n" if DEBUG;
-      return $class if $class->can_handle_project($file);
-    }
-  }
-
-  $self->abort("Could not figure out what kind of project this is from '$file'");
-}
 
 =head2 run_hook
 
@@ -438,31 +595,11 @@ needs to be defined in the config file. Example config line parameter:
 
   before_build = echo foo > bar.txt
 
-=cut
-
-sub run_hook {
-  my ($self, $name) = @_;
-  my $cmd = $self->config->{$name} or return;
-  $self->system($cmd);
-}
-
 =head2 new
 
   $self = $class->new(%attributes);
 
 Creates a new instance of C<$class>.
-
-=cut
-
-sub new {
-  my $class = shift;
-  my $self = bless @_ ? @_ > 1 ? {@_} : {%{$_[0]}} : {}, ref $class || $class;
-
-  open $self->{STDOUT}, '>&STDOUT';
-  open $self->{STDERR}, '>&STDERR';
-
-  $self;
-}
 
 =head2 render
 
@@ -472,56 +609,10 @@ Used to render a template by the name C<$file> to a C<$file>. The template
 needs to be defined in the C<DATA> section of the current class or one of
 the super classes.
 
-=cut
-
-sub render {
-  my ($self, $name, $args) = @_;
-  my $file = File::Spec->catfile(split '/', $name);
-  my $class = ref $self;
-  my $str;
-
-  if (-e $file and !$args->{force}) {
-    say "# $file exists" unless $self->silent;
-    return $self;
-  }
-
-  no strict 'refs';
-  for my $c ($class, @{"$class\::ISA"}) {
-    $str = $c->_data->{$name} and last;
-  }
-
-  $self->abort("Could not find template for $name") unless $str;
-
-  local @_ = ($self, $args);
-  $str =~ s!<%=(.+?)%>!{
-            my $x = eval $1 // die DEBUG ? "($1) => $@" : $@;
-            ref $x ? Data::Dumper->new([$x])->Indent(1)->Terse(1)->Sortkeys(1)->Dump : $x;
-          }!sge;
-
-  return $str if $args->{to_string};
-  make_path dirname($file) or $self->abort("Could not make directory for $file") unless -d dirname $file;
-  open my $FH, '>', $file or $self->abort("Could not write $name to $file: $!");
-  print $FH $str;
-  say "# Generated $file" unless $self->silent;
-}
-
 =head2 ship
 
 This method ships the project to some online repository. The default behavior
 is to make a new tag and push it to "origin".
-
-=cut
-
-sub ship {
-  my $self = shift;
-  my ($branch) = qx(git branch) =~ /\* (.+)$/m;
-
-  $self->abort("Cannot ship without a current branch") unless $branch;
-  $self->abort("Cannot ship without a version number") unless $self->next_version;
-  $self->system(qw( git push origin ), $branch);
-  $self->system(qw( git tag ) => $self->next_version);
-  $self->system(qw( git push --tags origin ));
-}
 
 =head2 start 
 
@@ -547,72 +638,16 @@ See L<CPAN::Meta::Spec/license> for alternatives.
 
 =back
 
-=cut
-
-sub start {
-  my $self = shift;
-
-  if (@_ and ref($self) eq __PACKAGE__) {
-    return $self->detect($_[0])->new($self)->start(@_);
-  }
-
-  $self->config({}); # make sure repository() does not die
-  $self->system(qw( git init-db )) unless -d '.git' and @_;
-  $self->render('.ship.conf', { homepage => $self->repository =~ s!\.git$!!r });
-  $self->render('.gitignore');
-  $self->system(qw(git add .));
-  $self->system(qw(git commit -a -m), "git ship start") if @_;
-  delete $self->{config}; # regenerate config from .ship.conf
-  $self;
-}
-
 =head2 system
 
   $self->system($program, @args);
 
 Same as perl's C<system()>, but provides error handling and logging.
 
-=cut
-
-sub system {
-  my ($self, $program, @args) = @_;
-  my @fh = (undef);
-  my $exit_code;
-
-  if ($self->silent) {
-    my $output = '';
-    push @fh, (\$output, \$output);
-  }
-  else {
-    my $log = "$program @args";
-    $log =~ s!\n\r?!\\n!g;
-    say "\$ $log";
-  }
-
-  warn "[ship]\$ $program @args\n" if DEBUG == 2;
-  IPC::Run3::run3(@args ? [$program => @args] : $program, @fh);
-  $exit_code = $? >> 8;
-  return $self unless $exit_code;
-
-  if ($self->silent) {
-    chomp $fh[1];
-    $self->abort("'$program @args' failed: $exit_code (${$fh[1]})");
-  }
-  else {
-    $self->abort("'$program @args' failed: $exit_code");
-  }
-}
-
 =head2 test_coverage
 
 This method checks test coverage for the project. The default behavior is to
 L</abort>. Needs to be overridden in the subclass.
-
-=cut
-
-sub test_coverage {
-  $_[0]->abort('test_coverage() is not available for %s', ref $_[0]);
-}
 
 =head2 import
 
@@ -626,59 +661,6 @@ L<warnings>, L<utf8> and Perl 5.10 features.
 C<-base> will also make sure the calling class inherits from L<App::git::ship>
 and gets the L<has|/attr> function. Does the same with a class name, except
 that it will then inherit from the given class.
-
-=cut
-
-sub import {
-  my ($class, $arg) = @_;
-  my $caller = caller;
-
-  if ($arg and ($arg eq '-base' or $arg =~ /::/)) {
-    no strict 'refs';
-    if ($arg eq '-base') {
-      push @{"${caller}::ISA"}, __PACKAGE__;
-    }
-    else {
-      eval "require $arg;1" or die $@;
-      push @{"${caller}::ISA"}, $arg;
-    }
-    *{"${caller}::has"} = sub { attr($caller, @_) };
-    *{"${caller}::DEBUG"} = \&DEBUG;
-  }
-
-  feature->import(':5.10');
-  strict->import;
-  warnings->import;
-}
-
-# Taken from Mojo::Loader
-sub _data {
-  my $class = shift;
-
-  return $DATA{$class} if $DATA{$class};
-  my $handle = do { no strict 'refs'; \*{"${class}::DATA"} };
-  return {} unless fileno $handle;
-  seek $handle, 0, 0;
-  my $data = join '', <$handle>;
-
-  # Ignore everything before __DATA__ (Windows will seek to start of file)
-  $data =~ s/^.*\n__DATA__\r?\n/\n/s;
-
-  # Ignore everything after __END__
-  $data =~ s/\n__END__\r?\n.*$/\n/s;
-
-  # Split files
-  (undef, my @files) = split /^@@\s*(.+?)\s*\r?\n/m, $data;
-
-  # Find data
-  my $all = $DATA{$class} = {};
-  while (@files) {
-    my $name = shift @files;
-    $all->{$name} = shift @files;
-  }
-
-  return $all;
-}
 
 =head1 SEE ALSO
 
@@ -711,8 +693,6 @@ the terms of the Artistic License version 2.0.
 Jan Henning Thorsen - C<jhthorsen@cpan.org>
 
 =cut
-
-1;
 
 __DATA__
 @@ .ship.conf
