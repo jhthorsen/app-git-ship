@@ -561,7 +561,7 @@ sub start {
   $self->render('.ship.conf', { homepage => $self->repository =~ s!\.git$!!r });
   $self->render('.gitignore');
   $self->system(qw(git add .));
-  $self->system(qw(git commit -m), "git ship start") if @_;
+  $self->system(qw(git commit -a -m), "git ship start") if @_;
   delete $self->{config}; # regenerate config from .ship.conf
   $self;
 }
