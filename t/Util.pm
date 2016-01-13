@@ -84,9 +84,13 @@ sub test_git {
 
   plan skip_all => "Invalid git: $git" unless $git =~ qr{^[\w\/-]+$};
   $output = qx{$git --version 2>/dev/null};
+  $output =~ s![\n\r]!!g;
   plan skip_all => "Invalid git: $output" unless $output =~ qr{\b\s+version\s+\d};
   plan skip_all => "Unsupported git version: $output" if $output =~ qr{\s1\.4};
   diag "git --version: $output" unless $output =~ /\b(1\.9|2\.[0123])/;
+  $output = qx{git config --global --get-regexp user.* 2>/dev/null};
+  $output =~ s![\n\r]!!g;
+  plan skip_all => "Cannot run with unknown git user: $output" unless $output =~ /user\.email/ and $output =~ /user\.name/;
 }
 
 sub import {
