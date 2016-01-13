@@ -6,8 +6,8 @@ perl:
 env:
   - "HARNESS_OPTIONS=j9"
 install:
-  - "git config --global user.email dummy@example.com";
-  - "git config --global user.name dummy";
+  - "git config --global user.email dummy@example.com"
+  - "git config --global user.name dummy"
   - "cpanm -n Test::Pod Test::Pod::Coverage"
   - "cpanm -n --installdeps ."
 notifications:
