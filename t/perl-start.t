@@ -81,7 +81,7 @@ my $workdir = Cwd::getcwd;
 {
   my $app = App::git::ship->new;
   unlink $_ for qw(MANIFEST.SKIP .gitignore .ship.conf);
-  local $ENV{PERL5LIB} = $git_ship_lib;
+  local $ENV{PERL5LIB} = join ':', $git_ship_lib, $ENV{PERL5LIB};
   system "$git_ship start lib/Perl/Start.pm";
   die $? >> 8 if $?;
   ok -e 'MANIFEST.SKIP', 'MANIFEST.SKIP was regenerated when start autodetect project type';
