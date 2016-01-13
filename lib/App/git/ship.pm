@@ -618,12 +618,14 @@ sub test_coverage {
 
   use App::git::ship;
   use App::git::ship -base;
+  use App::git::ship "App::git::ship::perl";
 
 Called when this class is used. It will automatically enable L<strict>,
 L<warnings>, L<utf8> and Perl 5.10 features.
 
-C<-base> will also make sure the calling class inherits from
-L<App::git::ship> and gets the L<has|/attr> function.
+C<-base> will also make sure the calling class inherits from L<App::git::ship>
+and gets the L<has|/attr> function. Does the same with a class name, except
+that it will then inherit from the given class.
 
 =cut
 
@@ -631,9 +633,15 @@ sub import {
   my ($class, $arg) = @_;
   my $caller = caller;
 
-  if ($arg and $arg eq '-base') {
+  if ($arg and ($arg eq '-base' or $arg =~ /::/)) {
     no strict 'refs';
-    push @{"${caller}::ISA"}, __PACKAGE__;
+    if ($arg eq '-base') {
+      push @{"${caller}::ISA"}, __PACKAGE__;
+    }
+    else {
+      eval "require $arg;1" or die $@;
+      push @{"${caller}::ISA"}, $arg;
+    }
     *{"${caller}::has"} = sub { attr($caller, @_) };
     *{"${caller}::DEBUG"} = \&DEBUG;
   }
