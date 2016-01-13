@@ -6,7 +6,7 @@ App::git::ship - Git command for shipping your project
 
 =head1 VERSION
 
-0.20
+0.21
 
 =head1 DESCRIPTION
 
@@ -230,7 +230,7 @@ use IPC::Run3 ();
 
 use constant DEBUG => $ENV{GIT_SHIP_DEBUG} || 0;
 
-our $VERSION = '0.20';
+our $VERSION = '0.21';
 
 my %DATA;
 
