@@ -529,12 +529,9 @@ pass on options to L<Devel::Cover>. The default value will be set to:
 
 Action for updating the basic repo files.
 
-=head1 COPYRIGHT AND LICENSE
+=head1 SEE ALSO
 
-Copyright (C) 2014, Jan Henning Thorsen
-
-This program is free software, you can redistribute it and/or modify it under
-the terms of the Artistic License version 2.0.
+L<App::git::ship>
 
 =head1 AUTHOR
 
