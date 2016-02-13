@@ -6,9 +6,9 @@ documentation 'App::git::ship';
 version 'App::git::ship';
 
 app {
-  my $self = shift;
+  my $self   = shift;
   my $action = shift || 'ship';
-  my $ship = App::git::ship->new;
+  my $ship   = App::git::ship->new;
 
   $action =~ s/-/_/g;
 
@@ -16,7 +16,7 @@ app {
     $ship->start(@_);
   }
   else {
-    $ship = $ship->detect;
+    $ship = $ship->detect->new;
     $ship->config;
     $ship->abort("Unknown action: $action") if $action !~ /^[a-z_]+$/ or !$ship->can($action);
     $ship->$action(@_);
