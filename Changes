@@ -1,6 +1,6 @@
 Revision history for perl distribution App-git-ship
 
-0.22 Not Released
+0.22 2016-02-13T18:41:52+0100
  - Fix extending other classes, such as App::git::ship::perl
 
 0.21 2016-01-13T09:09:00+0100

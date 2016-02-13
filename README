@@ -2,7 +2,7 @@ NAME
     App::git::ship - Git command for shipping your project
 
 VERSION
-    0.21
+    0.22
 
 DESCRIPTION
     App::git::ship is a git <http://git-scm.com/> command for building and
@@ -328,12 +328,14 @@ METHODS
   import
       use App::git::ship;
       use App::git::ship -base;
+      use App::git::ship "App::git::ship::perl";
 
     Called when this class is used. It will automatically enable strict,
     warnings, utf8 and Perl 5.10 features.
 
     "-base" will also make sure the calling class inherits from
-    App::git::ship and gets the has function.
+    App::git::ship and gets the has function. Does the same with a class
+    name, except that it will then inherit from the given class.
 
 SEE ALSO
     *   Dist::Zilla
