@@ -499,7 +499,7 @@ to the "origin" git repository.
 
 =item 5.
 
-Upload the dist file to CPAN.
+Upload the dist file to CPAN unless GIT_SHIP_NO_UPLOAD is set.
 
 =item 6.
 
