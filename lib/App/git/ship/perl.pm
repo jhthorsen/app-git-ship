@@ -139,7 +139,7 @@ sub ship {
   $self->system(qw( git add Makefile.PL ), $changelog, $self->_filename('readme'));
   $self->system(qw( git commit -a -m ), $self->_changes_to_commit_message);
   $self->SUPER::ship(@_);    # after all the changes
-  $uploader->upload_file($dist_file);
+  $uploader->upload_file($dist_file) unless $ENV{GIT_SHIP_NO_UPLOAD};
   $self->run_hook('after_ship');
   $self->clean;
 }
@@ -545,6 +545,7 @@ __DATA__
 *.bak
 *.old
 *.swp
+/*.tar.gz
 /blib/
 /cover_db
 /inc/
@@ -557,7 +558,7 @@ __DATA__
 /MYMETA*
 /pm_to_blib
 @@ cpanfile
-# You can install this projct with curl -L http://cpanmin.us | perl - <%= $_[0]->repository =~ s!\.git$!!r %>/archive/master.tar.gz
+# You can install this project with curl -L http://cpanmin.us | perl - <%= $_[0]->repository =~ s!\.git$!!r %>/archive/master.tar.gz
 requires "perl" => "5.10.0";
 test_requires "Test::More" => "0.88";
 @@ Changes
