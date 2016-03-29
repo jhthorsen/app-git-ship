@@ -545,6 +545,7 @@ __DATA__
 *.bak
 *.old
 *.swp
+/*.tar.gz
 /blib/
 /cover_db
 /inc/
@@ -557,7 +558,7 @@ __DATA__
 /MYMETA*
 /pm_to_blib
 @@ cpanfile
-# You can install this projct with curl -L http://cpanmin.us | perl - <%= $_[0]->repository =~ s!\.git$!!r %>/archive/master.tar.gz
+# You can install this project with curl -L http://cpanmin.us | perl - <%= $_[0]->repository =~ s!\.git$!!r %>/archive/master.tar.gz
 requires "perl" => "5.10.0";
 test_requires "Test::More" => "0.88";
 @@ Changes
