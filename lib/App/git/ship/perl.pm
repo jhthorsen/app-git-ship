@@ -139,7 +139,7 @@ sub ship {
   $self->system(qw( git add Makefile.PL ), $changelog, $self->_filename('readme'));
   $self->system(qw( git commit -a -m ), $self->_changes_to_commit_message);
   $self->SUPER::ship(@_);    # after all the changes
-  $uploader->upload_file($dist_file) unless $ENV{GIT_SHIP_NO_UPLOAD};
+  $uploader->upload_file($dist_file);
   $self->run_hook('after_ship');
   $self->clean;
 }
@@ -499,7 +499,7 @@ to the "origin" git repository.
 
 =item 5.
 
-Upload the dist file to CPAN unless GIT_SHIP_NO_UPLOAD is set.
+Upload the dist file to CPAN.
 
 =item 6.
 
