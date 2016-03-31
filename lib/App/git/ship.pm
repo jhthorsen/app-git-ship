@@ -492,7 +492,7 @@ The example below will result in "## 0.42 (2014-01-28)".
 "%v" will be replaced by the version, while the format arguments are passed
 on to L<POSIX/strftime>.
 
-The default is "%-7v  %a %b %e %H:%M:%S %Y".
+The default is "%v %Y-%m-%dT%H:%M:%S%z".
 
 =item * project_name
 
