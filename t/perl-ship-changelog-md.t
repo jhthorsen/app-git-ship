@@ -1,3 +1,4 @@
+use lib '.';
 use t::Util;
 use App::git::ship::perl;
 
@@ -39,7 +40,7 @@ DUMMY
   is $upload_file, 'Perl-Changelogmd-0.04.tar.gz', 'CPAN::Uploader uploaded version 0.04';
 
   ok !-e 'Changes', 'Changes is not here';
-  ok !-e 'README', 'README is not here';
+  ok !-e 'README',  'README is not here';
 }
 
 done_testing;

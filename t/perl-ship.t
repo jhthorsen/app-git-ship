@@ -1,3 +1,4 @@
+use lib '.';
 use t::Util;
 use App::git::ship::perl;
 
@@ -5,7 +6,10 @@ t::Util->goto_workdir('perl-ship', 0);
 
 {
   # 0.07: test to see if perldoc -tT should work
-  open my $FH, '>', 'README' or plan skip_all => sprintf 'Could not touch README in %s', Cwd::getcwd;
+  open my $FH, '>', 'README'
+    or plan
+    skip_all => sprintf 'Could not touch README in %s',
+    Cwd::getcwd;
 }
 
 my $upload_file;
@@ -49,7 +53,7 @@ DUMMY
 
   {
     local @ARGV = ('Changes');
-    local $^I = '';
+    local $^I   = '';
     while (<>) {
       print "0.02 Not Released\n - Some other cool feature\n\n" if $. == 3;
       print;
