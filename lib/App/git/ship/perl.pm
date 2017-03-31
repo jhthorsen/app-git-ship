@@ -136,8 +136,8 @@ sub ship {
   }
 
   $self->run_hook('before_ship');
-  $self->system(qw(git add Makefile.PL), $changelog, $self->_filename('readme'));
-  $self->system(qw(git commit -a -m), $self->_changes_to_commit_message);
+  $self->system(qw(git add Makefile.PL), $changelog);
+  $self->system(qw(git commit -a -m),    $self->_changes_to_commit_message);
   $self->SUPER::ship(@_);    # after all the changes
   $uploader->upload_file($dist_file);
   $self->run_hook('after_ship');
