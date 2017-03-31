@@ -54,6 +54,6 @@ sub write_alien_files {
   open my $README, '>', 'README.md';
   print $README "Too cool project!\n";
 
-  open my $MAIN_MODULE, '>', File::Spec->catfile(qw( lib Perl Changelogmd.pm )) or die $!;
+  open my $MAIN_MODULE, '>', File::Spec->catfile(qw(lib Perl Changelogmd.pm)) or die $!;
   print $MAIN_MODULE "package Perl::Changelogmd;\n=head1 NAME\n\nPerl::Changelogmd\n\n=head1 VERSION\n\n0.00\n\n=cut\n\nour \$VERSION = '42';\n\n1";
 }

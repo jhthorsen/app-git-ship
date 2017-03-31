@@ -68,11 +68,11 @@ DUMMY
 done_testing;
 
 sub create_bad_main_module {
-  open my $MAIN_MODULE, '>', File::Spec->catfile(qw( lib Perl Ship.pm )) or die $!;
+  open my $MAIN_MODULE, '>', File::Spec->catfile(qw(lib Perl Ship.pm)) or die $!;
   print $MAIN_MODULE "package Perl::Ship;\n=head1 NAME\n\nPerl::Ship\n\n1";
 }
 
 sub create_main_module {
-  open my $MAIN_MODULE, '>', File::Spec->catfile(qw( lib Perl Ship.pm )) or die $!;
+  open my $MAIN_MODULE, '>', File::Spec->catfile(qw(lib Perl Ship.pm)) or die $!;
   print $MAIN_MODULE "package Perl::Ship;\n=head1 NAME\n\nPerl::Ship\n\n=head1 VERSION\n\n0.00\n\n=cut\n\nour \$VERSION = '42';\n\n1";
 }

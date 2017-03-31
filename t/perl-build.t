@@ -12,8 +12,8 @@ t::Util->goto_workdir('perl-build', 0);
   $main_module_path = $app->main_module_path;
 
   mkdir 'bin';
-  touch(File::Spec->catfile("bin", $_)) for qw( e-x-e foo );
-  chmod 0755, File::Spec->catfile(qw( bin e-x-e ));
+  touch(File::Spec->catfile("bin", $_)) for qw(e-x-e foo);
+  chmod 0755, File::Spec->catfile(qw(bin e-x-e));
 
   $app->_render_makefile_pl;
   t::Util->test_file(
@@ -44,7 +44,7 @@ TODO: {
   create_main_module();
   $app->_update_version_info;
   t::Util->test_file(
-    File::Spec->catfile(qw( lib Perl Build.pm )), qr{^0\.01}m, qr{^our \$VERSION = '0\.01';}m,
+    File::Spec->catfile(qw(lib Perl Build.pm)), qr{^0\.01}m, qr{^our \$VERSION = '0\.01';}m,
   );
 
   add_version_to_changes("0.$_") for 1 .. 3;
@@ -54,11 +54,11 @@ TODO: {
     qr{^Released version 0\.3\n\n\W+Some other cool feature for 0\.3\.\n\n$}s,
     '_changes_to_commit_message() reset diamond operator';
 
-  touch($_) for qw( foo foo~ foo.bak foo.swp foo.old MYMETA.json );
+  touch($_) for qw(foo foo~ foo.bak foo.swp foo.old MYMETA.json);
   $app->_make('manifest');
   t::Util->test_file_lines(
     'MANIFEST',
-    qw( bin/e-x-e bin/foo .ship.conf Changes cpanfile foo lib/Perl/Build.pm Makefile.PL t/00-basic.t ),
+    qw(bin/e-x-e bin/foo .ship.conf Changes cpanfile foo lib/Perl/Build.pm Makefile.PL t/00-basic.t),
     qr{^MANIFEST\s+}
   );
 }
@@ -66,7 +66,7 @@ TODO: {
 done_testing;
 
 sub create_main_module {
-  open my $MAIN_MODULE, '>', File::Spec->catfile(qw( lib Perl Build.pm ));
+  open my $MAIN_MODULE, '>', File::Spec->catfile(qw(lib Perl Build.pm));
   print $MAIN_MODULE
     "package Perl::Build;\n=head1 NAME\n\nPerl::Build\n\n=head1 VERSION\n\n0.00\n\n=cut\n\nour \$VERSION = '42';\n\n1";
 }

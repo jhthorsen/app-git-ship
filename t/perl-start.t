@@ -19,7 +19,7 @@ my $workdir  = Cwd::getcwd;
   ok -l 'README.pod', 'README.pod symlink created';
   ok -e $app->main_module_path, 'main module was touched';
 
-  is $app->main_module_path, File::Spec->catfile(qw( lib Perl Start.pm )),
+  is $app->main_module_path, File::Spec->catfile(qw(lib Perl Start.pm)),
     'main_module_path() is set';
   is $app->config->{bugtracker}, "https://github.com/$username/perl-start/issues",
     'bugtracker is set up';
@@ -54,7 +54,7 @@ my $workdir  = Cwd::getcwd;
 
 {
   my $app = App::git::ship::perl->new;
-  unlink $_ for qw( MANIFEST.SKIP .gitignore );
+  unlink $_ for qw(MANIFEST.SKIP .gitignore);
   $app->start;
   ok -e 'MANIFEST.SKIP', 'MANIFEST.SKIP was regenerated when start read class from .ship.conf';
   ok -e '.gitignore',    '.gitignore was regenerated when start read class from .ship.conf';

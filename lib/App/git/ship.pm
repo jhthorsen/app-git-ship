@@ -63,8 +63,8 @@ __PACKAGE__->attr(
       last;
     }
 
-    $repository ||= lc sprintf 'https://github.com/%s/%s', $ENV{GITHUB_USERNAME} || scalar(getpwuid $<),
-      $self->project_name =~ s!::!-!gr;
+    $repository ||= lc sprintf 'https://github.com/%s/%s',
+      $ENV{GITHUB_USERNAME} || scalar(getpwuid $<), $self->project_name =~ s!::!-!gr;
     $repository =~ s!^[^:]+:!https://github.com/! unless $repository =~ /^http/;
     warn "[ship::repository] $repository\n" if DEBUG;
     $repository;
@@ -176,15 +176,15 @@ sub render {
 }
 
 sub ship {
-  my $self = shift;
+  my $self     = shift;
   my ($branch) = qx(git branch) =~ /\* (.+)$/m;
   my ($remote) = qx(git remote -v) =~ /^origin\s+(.+)\s+\(push\)$/m;
 
   $self->abort("Cannot ship without a current branch") unless $branch;
   $self->abort("Cannot ship without a version number") unless $self->next_version;
-  $self->system(qw( git push origin ), $branch) if $remote;
-  $self->system(qw( git tag ) => $self->next_version);
-  $self->system(qw( git push --tags origin )) if $remote;
+  $self->system(qw(git push origin), $branch) if $remote;
+  $self->system(qw(git tag) => $self->next_version);
+  $self->system(qw(git push --tags origin)) if $remote;
 }
 
 sub start {
@@ -195,7 +195,7 @@ sub start {
   }
 
   $self->config({});    # make sure repository() does not die
-  $self->system(qw( git init-db )) unless -d '.git' and @_;
+  $self->system(qw(git init-db)) unless -d '.git' and @_;
   $self->render('.ship.conf', {homepage => $self->repository =~ s!\.git$!!r});
   $self->render('.gitignore');
   $self->system(qw(git add .));
