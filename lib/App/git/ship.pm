@@ -335,6 +335,7 @@ L</license>. "AUTHOR" will have the name and email from the last git committer.
 L<main_module_path|App::git::ship::perl/main_module_path>.
 "EXE_FILES" will be the files in C<bin/> and C<script/> which are executable.
 "META_MERGE" will use data from L</bugtracker>, L</homepage>, and L</repository>.
+It is important to define your license in your .ship.conf before starting.
 
 Both C<cpanfile> and C<Makefile.PL> are automatically created for you if you set
 the class to App::git::ship::perl or you specify the
@@ -346,6 +347,8 @@ start.
 The Changes file will be updated with the correct L<timestamp|/new_version_format>,
 from when you ran the L</build> action. The Changes file will also be the source
 for L</next_version>. Both C<CHANGELOG.md> and C<Changes> are valid sources.
+App::git::ship looks for a version-timestamp line with the case-sensitive text "Not
+Released" as the the timestamp.
 
 Changes is automatically created for you if you set the class to
 App::git::ship::perl or your specify the
@@ -384,6 +387,15 @@ along.
 Unless this file exists, it will be created with a test for checking
 that your modules can compile and that the POD is correct. The file can be
 customized afterwards and will not be overwritten.
+
+=item * .git
+
+It is important to commit any uncommitted code to your git repository beforing
+building.
+
+It is important to have a remote setup in your git repository before shipping.
+It is important to have a ~/.pause file setup with 'user' and 'password' entries
+before shipping.
 
 =back
 
