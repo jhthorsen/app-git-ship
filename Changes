@@ -1,6 +1,6 @@
 Revision history for perl distribution App-git-ship
 
-0.24 Not Released
+0.24 2017-06-24T09:37:25+0200
  - Fix failing unit tests after 406f32d
 
 0.23 2017-06-20T00:11:42+0200
