@@ -164,6 +164,7 @@ sub start {
   symlink $self->main_module_path, 'README.pod' unless -e 'README.pod';
 
   $self->SUPER::start(@_);
+  $self->render('.travis.yml');
   $self->render('cpanfile');
   $self->render('Changes') if $changelog eq 'Changes';
   $self->render('MANIFEST.SKIP');
@@ -557,6 +558,27 @@ __DATA__
 /META*
 /MYMETA*
 /pm_to_blib
+@@ .travis.yml
+# Enable Travis Continuous Integration at https://travis-ci.org
+# Learn more https://docs.travis-ci.com
+lanaguage: perl
+perl:
+  - "5.26"
+  - "5.24"
+  - "5.22"
+  - "5.20"
+  - "5.18"
+  - "5.16"
+  - "5.14"
+  - "5.12"
+  - "5.10"
+install:
+  - cpanm -n --quiet --installdeps --with-develop .
+after_success:
+  - cover -test -report coveralls
+sudo: false
+notifications:
+  email: false
 @@ cpanfile
 # You can install this project with curl -L http://cpanmin.us | perl - <%= $_[0]->repository =~ s!\.git$!!r %>/archive/master.tar.gz
 requires "perl" => "5.10.0";
