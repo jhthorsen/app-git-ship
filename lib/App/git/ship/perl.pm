@@ -6,6 +6,7 @@ use File::Path 'make_path';
 use File::Spec;
 use Module::CPANfile;
 use POSIX qw(setlocale strftime LC_TIME);
+use YAML::Tiny ();
 
 my $VERSION_RE = qr{\W*\b(\d+\.[\d_]+)\b};
 
@@ -325,6 +326,20 @@ sub _timestamp_to_changes {
   $self->abort('Unable to add timestamp to ./%s', $changelog) unless $self->next_version;
 }
 
+sub _travis_configurated {
+  my ($self) = @_;
+  (my $min = $self->config->{min_perl_version} || 10) =~ s/(?:5\.)?([\d\.]+)/$1/;
+  (my $max = $self->config->{max_perl_version} || 26) =~ s/(?:5\.)?([\d\.]+)/$1/;
+  return YAML::Tiny->new({
+    language => 'perl',
+    perl     => [ map { "5.$_" } $min .. $max ],
+    install  => 'cpanm -n --quiet --installdeps --with-develop .',
+    after_success => 'cover -test -report coveralls',
+    sudo          => "false",
+    notifications => { email => "false" },
+  })->write_string;
+}
+
 sub _update_changes {
   my $self = shift;
   my $changes;
@@ -561,24 +576,7 @@ __DATA__
 @@ .travis.yml
 # Enable Travis Continuous Integration at https://travis-ci.org
 # Learn more https://docs.travis-ci.com
-lanaguage: perl
-perl:
-  - "5.26"
-  - "5.24"
-  - "5.22"
-  - "5.20"
-  - "5.18"
-  - "5.16"
-  - "5.14"
-  - "5.12"
-  - "5.10"
-install:
-  - cpanm -n --quiet --installdeps --with-develop .
-after_success:
-  - cover -test -report coveralls
-sudo: false
-notifications:
-  email: false
+<%= $_[0]->_travis_configurated %>
 @@ cpanfile
 # You can install this project with curl -L http://cpanmin.us | perl - <%= $_[0]->repository =~ s!\.git$!!r %>/archive/master.tar.gz
 requires "perl" => "5.10.0";

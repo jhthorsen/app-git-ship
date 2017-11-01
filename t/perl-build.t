@@ -58,7 +58,7 @@ TODO: {
   $app->_make('manifest');
   t::Util->test_file_lines(
     'MANIFEST',
-    qw(bin/e-x-e bin/foo .ship.conf Changes cpanfile foo lib/Perl/Build.pm Makefile.PL t/00-basic.t),
+    qw(bin/e-x-e bin/foo .ship.conf .travis.yml Changes cpanfile foo lib/Perl/Build.pm Makefile.PL t/00-basic.t),
     qr{^MANIFEST\s+}
   );
 }
