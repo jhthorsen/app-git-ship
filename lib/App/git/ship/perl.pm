@@ -527,8 +527,8 @@ Run "after_ship" L<hook|App::git::ship/Hooks>.
 
   $ git ship start
 
-Used to create main module file template and generate C<cpanfile>, C<Changes>,
-C<MANIFEST.SKIP> and C<t/00-basic.t>.
+Used to create main module file template and generate C<.travis.yml>,
+C<cpanfile>, C<Changes>, C<MANIFEST.SKIP> and C<t/00-basic.t>.
 
 =head2 test_coverage
 
@@ -544,6 +544,18 @@ pass on options to L<Devel::Cover>. The default value will be set to:
   $ git ship update
 
 Action for updating the basic repo files.
+
+=head1 CONFIG
+
+Additional configuration options specific to the perl shipping.
+
+=head2 min_perl_version
+
+The minimum version of perl to test.
+
+=head2 max_perl_version
+
+The maximum version of perl to test.
 
 =head1 SEE ALSO
 
