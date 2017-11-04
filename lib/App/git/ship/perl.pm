@@ -6,7 +6,6 @@ use File::Path 'make_path';
 use File::Spec;
 use Module::CPANfile;
 use POSIX qw(setlocale strftime LC_TIME);
-use YAML::Tiny ();
 
 my $VERSION_RE = qr{\W*\b(\d+\.[\d_]+)\b};
 
@@ -165,7 +164,9 @@ sub start {
   symlink $self->main_module_path, 'README.pod' unless -e 'README.pod';
 
   $self->SUPER::start(@_);
-  $self->render('.travis.yml');
+  $self->render('.travis.yml', {
+    versions => [ split ',' => $self->config->{test_perl_versions} || '5.10,5.20' ]
+  });
   $self->render('cpanfile');
   $self->render('Changes') if $changelog eq 'Changes';
   $self->render('MANIFEST.SKIP');
@@ -324,20 +325,6 @@ sub _timestamp_to_changes {
 
   say '# Building version ', $self->next_version unless $self->silent;
   $self->abort('Unable to add timestamp to ./%s', $changelog) unless $self->next_version;
-}
-
-sub _travis_configurated {
-  my ($self) = @_;
-  (my $min = $self->config->{min_perl_version} || 10) =~ s/(?:5\.)?([\d\.]+)/$1/;
-  (my $max = $self->config->{max_perl_version} || 26) =~ s/(?:5\.)?([\d\.]+)/$1/;
-  return YAML::Tiny->new({
-    language => 'perl',
-    perl     => [ map { "5.$_" } $min .. $max ],
-    install  => 'cpanm -n --quiet --installdeps --with-develop .',
-    after_success => 'cover -test -report coveralls',
-    sudo          => "false",
-    notifications => { email => "false" },
-  })->write_string;
 }
 
 sub _update_changes {
@@ -549,13 +536,11 @@ Action for updating the basic repo files.
 
 Additional configuration options specific to the perl shipping.
 
-=head2 min_perl_version
+=head2 test_perl_versions
 
-The minimum version of perl to test.
+  test_perl_versions = 5.10, 5.12, 5.14
 
-=head2 max_perl_version
-
-The maximum version of perl to test.
+The versions of perl to test.
 
 =head1 SEE ALSO
 
@@ -588,7 +573,15 @@ __DATA__
 @@ .travis.yml
 # Enable Travis Continuous Integration at https://travis-ci.org
 # Learn more https://docs.travis-ci.com
-<%= $_[0]->_travis_configurated %>
+language: perl
+sudo: false
+perl: [ <%= join ", ", @{$_[1]->{versions}} %> ]
+install:
+  - "cpanm -n Devel::Cover Test::Pod Test::Pod::Coverage"
+  - "cpanm -n --quiet --installdeps --with-develop ."
+after_success: "cover -test -report coveralls"
+notifications:
+  email: false
 @@ cpanfile
 # You can install this project with curl -L http://cpanmin.us | perl - <%= $_[0]->repository =~ s!\.git$!!r %>/archive/master.tar.gz
 requires "perl" => "5.10.0";

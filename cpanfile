@@ -8,6 +8,5 @@ requires "Module::CPANfile"    => "1.00";
 requires "Module::Find"        => "0.10";
 requires "Test::Pod"           => "0";
 requires "Test::Pod::Coverage" => "0";
-requires "YAML::Tiny"          => "0";
 
 test_requires "Test::More" => "0.90";
