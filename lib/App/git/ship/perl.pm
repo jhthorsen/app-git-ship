@@ -9,7 +9,7 @@ use POSIX qw(setlocale strftime LC_TIME);
 
 my $VERSION_RE = qr{\W*\b(\d+\.[\d_]+)\b};
 
-my %FILENAMES = (changelog => [qw(CHANGELOG.md Changes)], readme => [qw(README.md README)]);
+my %FILENAMES = (changelog => [qw(CHANGELOG.md Changes)]);
 
 has main_module_path => sub {
   my $self = shift;
@@ -49,8 +49,7 @@ has project_name => sub {
 has _cpanfile => sub { Module::CPANfile->load; };
 
 sub build {
-  my $self   = shift;
-  my $readme = $self->_filename('readme');
+  my $self = shift;
 
   $self->clean(0);
   $self->system(prove => split /\s/, $self->config->{build_test_options})
@@ -60,8 +59,6 @@ sub build {
   $self->_render_makefile_pl;
   $self->_timestamp_to_changes;
   $self->_update_version_info;
-  $self->system(sprintf '%s %s > %s', 'perldoc -tT', $self->main_module_path, $readme)
-    if $readme eq 'README';
   $self->_make('manifest');
   $self->_make('dist');
   $self->run_hook('after_build');
@@ -161,8 +158,6 @@ sub start {
     }
   }
 
-  symlink $self->main_module_path, 'README.pod' unless -e 'README.pod';
-
   $self->SUPER::start(@_);
   $self->render('cpanfile');
   $self->render('Changes') if $changelog eq 'Changes';
@@ -192,17 +187,13 @@ sub test_coverage {
 sub update {
   my $self    = shift;
   my $changes = $self->_filename('changelog');
-  my $readme  = $self->_filename('readme');
 
   $self->abort("Cannot update with .git directory. Forgot to run 'git ship start'?")
     unless -d '.git';
 
-  symlink $self->main_module_path, 'README.pod' unless -e 'README.pod';
   $self->_render_makefile_pl;
   $self->_update_changes if $changes eq 'Changes';
   $self->render('t/00-basic.t', {force => 1});
-  $self->system(sprintf '%s %s > %s', 'perldoc -tT', $self->main_module_path, $readme)
-    if $readme eq 'README';
   $self;
 }
 
@@ -434,17 +425,13 @@ Update version in main module file.
 
 =item 7.
 
-Update README with perldoc, unless another readfile file exists.
+Make MANIFEST
 
 =item 8.
 
-Make MANIFEST
-
-=item 9.
-
 Make dist file (Your-App-0.42.tar.gz)
 
-=item 10.
+=item 9.
 
 Run "after_build" L<hook|App::git::ship/Hooks>.
 
