@@ -362,7 +362,7 @@ Will be updated with the main module documentation using the command below:
   $ perldoc -tT $main_module_path > README;
 
 If you don't like this format, you can create and write C<README.md> manually
-instead. The presense of that file will prevent "my-app/README" from getting
+instead. The presence of that file will prevent "my-app/README" from getting
 generated.
 
 Both C<README> and C<README.pod> are automatically created for you if you set
