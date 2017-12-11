@@ -55,7 +55,7 @@ __PACKAGE__->attr(
     my $self = shift;
     my $repository;
 
-    open my $REPOSITORIES, '-|', q( git remote -v ) or $self->abort("git remote -v: $!");
+    open my $REPOSITORIES, '-|', qw(git remote -v) or $self->abort("git remote -v: $!");
 
     while (<$REPOSITORIES>) {
       next unless /^origin\s+(\S+).*push/;
@@ -162,7 +162,7 @@ sub render {
 
   local @_ = ($self, $args);
   $str =~ s!<%=(.+?)%>!{
-            my $x = eval $1 // die DEBUG ? "($1) => $@" : $@;
+            my $x = eval $1 // die "($1) => $@";
             ref $x ? Data::Dumper->new([$x])->Indent(1)->Terse(1)->Sortkeys(1)->Dump : $x;
           }!sge;
 
