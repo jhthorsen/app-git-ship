@@ -593,6 +593,7 @@ WriteMakefile(%WriteMakefileArgs);
 \.swp$
 ^local/
 ^MANIFEST\.SKIP
+^README\.md
 ^README\.pod
 @@ t/00-basic.t
 use Test::More;
