@@ -4,7 +4,7 @@ use App::git::ship;
 
 t::Util->goto_workdir('repository');
 
-my $app = App::git::ship->new(silent => 1);
+my $app = App::git::ship->new(silent => $ENV{HARNESS_IS_VERBOSE} ? 0 : 1);
 my $username = getpwuid $<;
 
 delete $app->{repository};

@@ -37,7 +37,7 @@ DUMMY
   $upload_file = '';
   eval { $app->ship };
   is $@, '', 'no ship error';
-  is $upload_file, 'Perl-Changelogmd-0.04.tar.gz', 'CPAN::Uploader uploaded version 0.04';
+  like $upload_file, qr{\bPerl-Changelogmd-0\.04\.tar\.gz$}, 'CPAN::Uploader uploaded version 0.04';
 
   ok !-e 'Changes', 'Changes is not here';
   ok !-e 'README',  'README is not here';

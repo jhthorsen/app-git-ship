@@ -1,11 +1,11 @@
 package App::git::ship::perl;
-use App::git::ship -base;
-use Cwd ();
-use File::Basename qw(dirname basename);
-use File::Path 'make_path';
-use File::Spec;
+use Mojo::Base 'App::git::ship';
+
 use Module::CPANfile;
+use Mojo::File 'path';
 use POSIX qw(setlocale strftime LC_TIME);
+
+use constant DEBUG => $ENV{GIT_SHIP_DEBUG} || 0;
 
 my $VERSION_RE = qr{\W*\b(\d+\.[\d_]+)\b};
 
@@ -13,37 +13,35 @@ my %FILENAMES = (changelog => [qw(CHANGELOG.md Changes)]);
 
 has main_module_path => sub {
   my $self = shift;
-  return $self->config->{main_module_path} if $self->config->{main_module_path};
+  return path(split '/', $self->config('main_module_path')) if $self->config('main_module_path');
 
-  my @path = split /-/, basename(Cwd::getcwd);
-  my $path = 'lib';
-  my @name;
+  my @project_name = split /-/, path->basename;
+  my $path = path 'lib';
 
 PATH_PART:
-  for my $p (@path) {
+  for my $p (@project_name) {
     opendir my $DH, $path or $self->abort("Cannot find project name from $path: $!");
 
-    for my $f (readdir $DH) {
-      $f =~ s/\.pm$//;
-      next unless lc $f eq lc $p;
-      push @name, $f;
-      $path = File::Spec->catdir($path, $f);
+    for (readdir $DH) {
+      my $f = "$_";
+      s!\.pm$!!;
+      next unless lc eq lc $p;
+      $path = path $path, $f;
       next PATH_PART;
     }
   }
 
-  return "$path.pm";
+  return $path;
 };
 
 has project_name => sub {
   my $self = shift;
+  return $self->config('project_name') if $self->config('project_name');
 
-  return $self->config->{project_name} if $self->config->{project_name};
-
-  my @name = File::Spec->splitdir($self->main_module_path);
+  my @name = @{$self->main_module_path};
   shift @name if $name[0] eq 'lib';
   $name[-1] =~ s!\.pm$!!;
-  join '::', @name;
+  return join '::', @name;
 };
 
 has _cpanfile => sub { Module::CPANfile->load; };
@@ -52,8 +50,8 @@ sub build {
   my $self = shift;
 
   $self->clean(0);
-  $self->system(prove => split /\s/, $self->config->{build_test_options})
-    if $self->config->{build_test_options};
+  $self->system(prove => split /\s/, $self->config('build_test_options'))
+    if $self->config('build_test_options');
   $self->clean(0);
   $self->run_hook('before_build');
   $self->_render_makefile_pl;
@@ -67,16 +65,8 @@ sub build {
 
 sub can_handle_project {
   my ($class, $file) = @_;
-  my $can_handle_project = 0;
-
-  if ($file) {
-    return $file =~ /\.pm$/ ? 1 : 0;
-  }
-  if (-d 'lib') {
-    File::Find::find(sub { $can_handle_project = 1 if /\.pm$/; }, 'lib');
-  }
-
-  return $can_handle_project;
+  return $file =~ /\.pm$/ ? 1 : 0 if $file;
+  return path('lib')->list_tree->grep(sub {/\.pm$/})->size;
 }
 
 sub clean {
@@ -85,7 +75,7 @@ sub clean {
   my @files = qw(Makefile Makefile.old MANIFEST MYMETA.json MYMETA.yml);
 
   push @files, qw(Changes.bak META.json META.yml) if $all;
-  $self->_dist_files(sub { push @files, $_; });
+  push @files, $self->_dist_files->each;
 
   for my $file (@files) {
     next unless -e $file;
@@ -101,8 +91,7 @@ sub exe_files {
   my @files;
 
   for my $d (qw(bin script)) {
-    opendir(my $BIN, $d) or next;
-    push @files, map {"$d/$_"} grep { /^\w/ and -x File::Spec->catfile($d, $_) } readdir $BIN;
+    push @files, path($d)->list->grep(sub {-x})->each;
   }
 
   return @files;
@@ -110,7 +99,7 @@ sub exe_files {
 
 sub ship {
   my $self      = shift;
-  my $dist_file = $self->_dist_files(sub {1});
+  my $dist_file = $self->_dist_files->[0];
   my $changelog = $self->_filename('changelog');
   my $uploader;
 
@@ -146,13 +135,13 @@ sub start {
   my $changelog = $self->_filename('changelog');
 
   if (my $file = $_[0]) {
-    $file = File::Spec->catfile(lib => $file) unless $file =~ m!^.?lib!;
-    $self->config({})->main_module_path($file);
+    $file = $file =~ m!^.?lib! ? path($file) : path(lib => $file);
+    $self->tap(sub { $self->{config} = {} })->main_module_path($file);
     unless (-e $file) {
       my $work_dir = lc($self->project_name) =~ s!::!-!gr;
       mkdir $work_dir;
       chdir $work_dir or $self->abort("Could not chdir to $work_dir");
-      make_path dirname $self->main_module_path;
+      $self->main_module_path->dirname->make_path;
       open my $MAINMODULE, '>>', $self->main_module_path
         or $self->abort("Could not create %s", $self->main_module_path);
     }
@@ -229,16 +218,10 @@ sub _changes_to_commit_message {
 }
 
 sub _dist_files {
-  my ($self, $cb) = @_;
-  my $name = lc($self->project_name) =~ s!::!-!gr;
+  my $self = shift;
+  my $name = $self->project_name =~ s!::!-!gr;
 
-  opendir(my $DH, Cwd::getcwd);
-  while (readdir $DH) {
-    next unless /^$name.*\.tar/i;
-    return $_ if $self->$cb;
-  }
-
-  return undef;
+  return path->list->grep(sub {m!\b$name.*\.tar!i});
 }
 
 sub _filename {
@@ -295,7 +278,7 @@ sub _timestamp_to_changes {
 
   $release_line = sub {
     my $v = shift;
-    my $str = $self->config->{new_version_format} || '%v %Y-%m-%dT%H:%M:%S%z';
+    my $str = $self->config('new_version_format') || '%v %Y-%m-%dT%H:%M:%S%z';
     $str =~ s!(%-?\d*)v!{ sprintf "${1}s", $v }!e;
     setlocale LC_TIME, 'C';
     $str = strftime $str, localtime;
@@ -545,11 +528,11 @@ __DATA__
 /MYMETA*
 /pm_to_blib
 @@ cpanfile
-# You can install this project with curl -L http://cpanmin.us | perl - <%= $_[0]->repository =~ s!\.git$!!r %>/archive/master.tar.gz
+# You can install this project with curl -L http://cpanmin.us | perl - <%= $ship->repository =~ s!\.git$!!r %>/archive/master.tar.gz
 requires "perl" => "5.10.0";
 test_requires "Test::More" => "0.88";
 @@ Changes
-Revision history for perl distribution <%= $self->project_name =~ s!::!-!gr %>
+Revision history for perl distribution <%= $ship->project_name =~ s!::!-!gr %>
 
 0.01 Not Released
  - Started project
@@ -557,25 +540,25 @@ Revision history for perl distribution <%= $self->project_name =~ s!::!-!gr %>
 # Generated by git-ship. See 'git-ship --man' for help or https://github.com/jhthorsen/app-git-ship
 use ExtUtils::MakeMaker;
 my %WriteMakefileArgs = (
-  NAME           => '<%= $_[0]->project_name %>',
-  AUTHOR         => '<%= $_[0]->_author("%an <%ae>") %>',
-  LICENSE        => '<%= $_[0]->config->{license} %>',
-  ABSTRACT_FROM  => '<%= $_[0]->main_module_path %>',
-  VERSION_FROM   => '<%= $_[0]->main_module_path %>',
-  EXE_FILES      => [qw(<%= join ' ', $_[0]->exe_files %>)],
-  BUILD_REQUIRES => <%= $_[1]->{BUILD_REQUIRES} %>,
-  TEST_REQUIRES  => <%= $_[1]->{TEST_REQUIRES} %>,
-  PREREQ_PM      => <%= $_[1]->{PREREQ_PM} %>,
+  NAME           => '<%= $ship->project_name %>',
+  AUTHOR         => '<%= $ship->_author('%an \<\%ae>') %>',
+  LICENSE        => '<%= $ship->config('license') %>',
+  ABSTRACT_FROM  => '<%= $ship->main_module_path %>',
+  VERSION_FROM   => '<%= $ship->main_module_path %>',
+  EXE_FILES      => [qw(<%= join ' ', $ship->exe_files %>)],
+  BUILD_REQUIRES => <%= $ship->dump($BUILD_REQUIRES) %>,
+  TEST_REQUIRES  => <%= $ship->dump($TEST_REQUIRES) %>,
+  PREREQ_PM      => <%= $ship->dump($PREREQ_PM) %>,
   META_MERGE     => {
     'dynamic_config' => 0,
     'meta-spec'      => {version => 2},
     'resources'      => {
-      bugtracker => {web => '<%= $_[0]->config->{bugtracker} %>'},
-      homepage   => '<%= $_[0]->config->{homepage} %>',
+      bugtracker => {web => '<%= $ship->config('bugtracker') %>'},
+      homepage   => '<%= $ship->config('homepage') %>',
       repository => {
         type => 'git',
-        url  => '<%= $_[0]->repository %>',
-        web  => '<%= $_[0]->config->{homepage} %>',
+        url  => '<%= $ship->repository %>',
+        web  => '<%= $ship->config('homepage') %>',
       },
     },
   },
@@ -589,7 +572,7 @@ unless (eval { ExtUtils::MakeMaker->VERSION('6.63_03') }) {
 
 WriteMakefile(%WriteMakefileArgs);
 @@ MANIFEST.SKIP
-<%= $_[0]->_include_mskip_file %>
+<%= $ship->_include_mskip_file %>
 \.swp$
 ^local/
 ^MANIFEST\.SKIP
@@ -620,7 +603,7 @@ find(
   -e 'blib' ? 'blib' : 'lib',
 );
 
-plan tests => @files * 3 + <%= $_[0]->_filename('changelog') eq 'Changes' ? 4 : 0 %>;
+plan tests => @files * 3 + <%= $ship->_filename('changelog') eq 'Changes' ? 4 : 0 %>;
 
 for my $file (@files) {
   my $module = $file; $module =~ s,\.pm$,,; $module =~ s,.*/?lib/,,; $module =~ s,/,::,g;
@@ -629,4 +612,4 @@ for my $file (@files) {
   Test::Pod::Coverage::pod_coverage_ok($module, { also_private => [ qr/^[A-Z_]+$/ ], });
 }
 
-<%= $_[0]->_filename('changelog') eq 'Changes' ? 'Test::CPAN::Changes::changes_file_ok();' : '' %>
+<%= $ship->_filename('changelog') eq 'Changes' ? 'Test::CPAN::Changes::changes_file_ok();' : '' %>

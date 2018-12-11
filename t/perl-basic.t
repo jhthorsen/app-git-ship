@@ -5,23 +5,19 @@ my $app = App::git::ship::perl->new;
 
 {
   my $dist_file = 'App-git-SHIP.tar.gz';
-  my $found = 0;
+  my $found     = 0;
 
   ok $app->can_handle_project, 'App::git::ship::perl can handle this project';
   is $app->project_name, 'App::git::ship', 'project_name()';
-  is $app->_dist_files(sub { $found++; return; }), undef, 'found no dist file';
-  is $found, 0, '_dist_files callback was not called';
+  ok !$app->_dist_files->[0], 'found no dist file';
 
   open my $FH, '>', $dist_file or die "Write $dist_file: $!";
   close $FH;
-  is $app->_dist_files(sub { ++$found; }), $dist_file, "found $dist_file";
-
-  $app->_dist_files(sub { ++$found; return; });
-  is $found, 2, '_dist_files callback was called once';
-
-  like $app->_changes_to_commit_message, qr{Released version [\d\._]+\n\n\s+}, '_changes_to_commit_message()';
-
+  like $app->_dist_files->[0], qr{\b$dist_file$}, "found $dist_file";
   unlink $dist_file;
+
+  like $app->_changes_to_commit_message, qr{Released version [\d\._]+\n\n\s+},
+    '_changes_to_commit_message()';
 }
 
 TODO: {

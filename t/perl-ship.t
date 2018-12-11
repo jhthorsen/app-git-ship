@@ -37,7 +37,7 @@ DUMMY
 
   eval { $app->ship };
   is $@, '', 'no ship error';
-  is $upload_file, 'Perl-Ship-0.01.tar.gz', 'CPAN::Uploader uploaded version 0.01';
+  like $upload_file, qr{\bPerl-Ship-0\.01\.tar\.gz$}, 'CPAN::Uploader uploaded version 0.01';
 }
 
 {
@@ -62,7 +62,7 @@ DUMMY
 
   $app->build->ship;
   is $app->next_version, '0.02', 'next_version is 0.02';
-  is $upload_file, 'Perl-Ship-0.02.tar.gz', 'CPAN::Uploader uploaded version 0.02';
+  like $upload_file, qr{\bPerl-Ship-0\.02\.tar\.gz$}, 'CPAN::Uploader uploaded version 0.01';
 }
 
 done_testing;
