@@ -21,7 +21,7 @@ DUMMY
   write_alien_files();
 
   diag 'Build';
-  $app->config->{new_version_format} = '## %v (%F)';
+  $app->config(new_version_format => '## %v (%F)');
   eval { $app->ship };
   like $@, qr{Project built}, 'Project built';
   is $upload_file, '', 'CPAN::Uploader did not upload anything';

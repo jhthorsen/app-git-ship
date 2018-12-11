@@ -388,7 +388,7 @@ Call L</clean> to make sure the repository does not contain old build files.
 
 =item 2.
 
-Run L<prove|App::Prove> if C<build_test_options> is set in C<.ship.conf>.
+Run L<prove|App::Prove> if C<build_test_options> is set in L</config>.
 
 =item 3.
 

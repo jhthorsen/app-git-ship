@@ -58,11 +58,9 @@ TODO: {
 
   touch($_) for qw(foo foo~ foo.bak foo.swp foo.old MYMETA.json);
   $app->_make('manifest');
-  t::Util->test_file_lines(
-    'MANIFEST',
-    qw(bin/e-x-e bin/foo .ship.conf Changes cpanfile foo lib/Perl/Build.pm Makefile.PL t/00-basic.t),
-    qr{^MANIFEST\s+}
-  );
+  t::Util->test_file_lines('MANIFEST',
+    qw(bin/e-x-e bin/foo Changes cpanfile foo lib/Perl/Build.pm Makefile.PL t/00-basic.t),
+    qr{^MANIFEST\s+});
 }
 
 done_testing;
