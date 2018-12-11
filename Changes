@@ -1,5 +1,9 @@
 Revision history for perl distribution App-git-ship
 
+0.28 Not Released
+ - Depend on Mojolicious to make the code base easier to maintain
+ - Can read config from environment
+
 0.27 2017-12-24T11:59:41+0100
  - Forgot to release git-ship with the latest git-ship #17
 

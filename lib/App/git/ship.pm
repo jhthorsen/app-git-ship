@@ -52,9 +52,15 @@ sub config {
   my $self = shift;
   my $config = $self->{config} ||= $self->_build_config;
 
-  return $config if @_ == 0;
-  return $config->{$_[0]} // '' if @_ == 1;
-  $config->{$_[0]} = $_[1] if @_ == 2;
+  # Get all
+  return $config unless @_;
+
+  # Get key
+  my $key = shift;
+  return $config->{$key} // $ENV{uc("GIT_SHIP_$key")} // '' unless @_;
+
+  # Set key
+  $config->{$key} = $_[0];
   return $self;
 }
 
