@@ -46,7 +46,7 @@ DUMMY
   bless $app, $app->detect;
   $upload_file = '';
 
-  is $app->next_version, '0', 'no next_version yet';
+  ok !$app->config('next_version'), 'no next_version yet';
 
   eval { $app->ship };
   like $@, qr{Unable to add timestamp}, 'Unable to add timestamp';
@@ -61,7 +61,7 @@ DUMMY
   }
 
   $app->build->ship;
-  is $app->next_version, '0.02', 'next_version is 0.02';
+  is $app->config('next_version'), '0.02', 'next_version is 0.02';
   like $upload_file, qr{\bPerl-Ship-0\.02\.tar\.gz$}, 'CPAN::Uploader uploaded version 0.01';
 }
 

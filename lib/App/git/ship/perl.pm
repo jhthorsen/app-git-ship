@@ -111,12 +111,12 @@ sub ship {
     $self->abort(
       "Project built. Run 'git ship' again to post dist to CPAN and remote repostitory.");
   }
-  unless ($self->next_version) {
+  unless ($self->config('next_version')) {
     close ARGV;
     local @ARGV = $changelog;
     while (<>) {
       /^$VERSION_RE\s*/ or next;
-      $self->next_version($1);
+      $self->config(next_version => $1);
       last;
     }
   }
@@ -289,13 +289,13 @@ sub _timestamp_to_changes {
   local @ARGV = $changelog;
   local $^I   = '';
   while (<>) {
-    $self->next_version($1)
+    $self->config(next_version => $1)
       if s/^$VERSION_RE\x20*(?:Not Released)?\x20*([\r\n]+)/{ $release_line->($1) . $2 }/e;
     print;    # print back to same file
   }
 
-  say '# Building version ', $self->next_version unless $self->silent;
-  $self->abort('Unable to add timestamp to ./%s', $changelog) unless $self->next_version;
+  say '# Building version ', $self->config('next_version') unless $self->silent;
+  $self->abort('Unable to add timestamp to ./%s', $changelog) unless $self->config('next_version');
 }
 
 sub _update_changes {
@@ -318,12 +318,12 @@ sub _update_changes {
 
 sub _update_version_info {
   my $self    = shift;
-  my $version = $self->next_version
+  my $version = $self->config('next_version')
     or $self->abort('Internal error: Are you sure Changes has a timestamp?');
-  my %r;
 
   local @ARGV = ($self->main_module_path);
   local $^I   = '';
+  my %r;
   while (<>) {
     $r{pod} ||= s/$VERSION_RE/$version/ if /^=head1 VERSION/ .. $r{pod} && /^=(cut|head1)/ || eof;
     $r{var} ||= s/((?:our)?\s*\$VERSION)\s*=.*/$1 = '$version';/;

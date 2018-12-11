@@ -12,7 +12,6 @@ use constant DEBUG => $ENV{GIT_SHIP_DEBUG} || 0;
 
 our $VERSION = '0.27';
 
-has next_version => 0;
 has project_name => sub { shift->config('project_name') || 'unknown' };
 
 has repository => sub {
@@ -128,9 +127,9 @@ sub ship {
   my ($remote) = qx(git remote -v) =~ /^origin\s+(.+)\s+\(push\)$/m;
 
   $self->abort("Cannot ship without a current branch") unless $branch;
-  $self->abort("Cannot ship without a version number") unless $self->next_version;
+  $self->abort("Cannot ship without a version number") unless $self->config('next_version');
   $self->system(qw(git push origin), $branch) if $remote;
-  $self->system(qw(git tag) => $self->next_version);
+  $self->system(qw(git tag) => $self->config('next_version'));
   $self->system(qw(git push --tags origin)) if $remote;
 }
 
@@ -480,12 +479,6 @@ Possible hooks are C<before_build>, C<after_build>, C<before_ship>, and C<after_
 =back
 
 =head1 ATTRIBUTES
-
-=head2 next_version
-
-  $str = $self->next_version;
-
-Holds the next version to L</ship>.
 
 =head2 project_name
 
