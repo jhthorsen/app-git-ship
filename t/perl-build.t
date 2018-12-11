@@ -8,15 +8,13 @@ my $fat_re = qr{\s+=>\s+};
 
 {
   my $app = App::git::ship::perl->new;
-  my $main_module_path;
-
   $app->start('Perl/Build.pm', 0);
-  $main_module_path = $app->main_module_path;
 
   mkdir 'bin';
   touch(File::Spec->catfile("bin", $_)) for qw(e-x-e foo);
   chmod 0755, File::Spec->catfile(qw(bin e-x-e));
 
+  my $main_module_path = $app->config('main_module_path');
   $app->_render_makefile_pl;
   t::Util->test_file(
     'Makefile.PL',

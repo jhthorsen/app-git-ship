@@ -14,4 +14,7 @@ is $app->config('whatever'), '', 'whatever';
 $ENV{GIT_SHIP_WHATEVER} = 'cool';
 is $app->config('whatever'), 'cool', 'GIT_SHIP_WHATEVER';
 
+$app->config(whatever => 123);
+is $app->config('whatever'), '123', 'set config';
+
 done_testing;

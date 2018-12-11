@@ -10,8 +10,8 @@ ok !exists $app->{some_attr}, 'some_attr does not exist';
 is $app->some_attr, 123, 'some_attr() 123';
 ok exists $app->{some_attr}, 'some_attr exists';
 
-like $app->render('test', {x => 'repository', to_string => 1}), qr{^repository: \S+ \# test},
-  'render';
+like $app->render_template('test', {x => 'repository', to_string => 1}),
+  qr{^repository: \S+ \# test}, 'render';
 eval { $app->can_handle_project };
 like $@, qr{^\!\! can_handle_project}, 'can_handle_project() is not available';
 

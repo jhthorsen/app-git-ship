@@ -16,10 +16,10 @@ my $workdir  = Cwd::getcwd;
   isa_ok($app, 'App::git::ship::perl');
   isnt $workdir, Cwd::getcwd, 'chdir after start()';
   ok -d '.git', '.git was created';
-  ok -e $app->main_module_path, 'main module was touched';
+  ok -e $app->config('main_module_path'), 'main module was touched';
 
-  is $app->main_module_path, File::Spec->catfile(qw(lib Perl Start.pm)),
-    'main_module_path() is set';
+  is $app->config('main_module_path'), File::Spec->catfile(qw(lib Perl Start.pm)),
+    'main_module_path is set';
   is $app->config('bugtracker'), "https://github.com/$username/perl-start/issues",
     'bugtracker is set up';
   is $app->config('homepage'), "https://github.com/$username/perl-start", 'homepage is set up';

@@ -8,7 +8,7 @@ my $app = App::git::ship::perl->new;
   my $found     = 0;
 
   ok $app->can_handle_project, 'App::git::ship::perl can handle this project';
-  is $app->project_name, 'App::git::ship', 'project_name()';
+  is $app->config('project_name'), 'App::git::ship', 'project_name()';
   ok !$app->_dist_files->[0], 'found no dist file';
 
   open my $FH, '>', $dist_file or die "Write $dist_file: $!";
@@ -22,17 +22,17 @@ my $app = App::git::ship::perl->new;
 
 TODO: {
   local $TODO = $^O eq 'linux' ? undef : 'No idea how to test this on other platforms';
-  is_deeply [$app->exe_files], ['bin/git-ship'], 'exe_files: bin/git-ship';
+  is_deeply [$app->_exe_files], ['bin/git-ship'], 'exe_files: bin/git-ship';
 }
 
 SKIP: {
   skip '.git is not here', 1 unless -d '.git';
 
-  my $author = $app->_author('%an, <%ae>');
-  like $author, qr{^[^,]+, <[^\@]+\@[^\>]+>$}, 'got author and email';
+  my $author = $app->config('author');
+  like $author, qr{^\S+[^<]+<[^\@]+\@[^\>]+>$}, 'got author and email';
 
-  $author =~ s!,\s<.*!!;
-  is $app->_author('%an'), $author, 'got author';
+  $author =~ s!\s<.*!!;
+  is $app->_build_config_param_author('%an'), $author, 'got author';
 }
 
 done_testing;

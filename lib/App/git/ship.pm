@@ -8,32 +8,10 @@ use Mojo::File 'path';
 use Mojo::Loader;
 use Mojo::Template;
 
-use constant DEBUG => $ENV{GIT_SHIP_DEBUG} || 0;
+use constant DEBUG  => $ENV{GIT_SHIP_DEBUG}  || 0;
+use constant SILENT => $ENV{GIT_SHIP_SILENT} || 0;
 
 our $VERSION = '0.27';
-
-has project_name => sub { shift->config('project_name') || 'unknown' };
-
-has repository => sub {
-  my $self = shift;
-  my $repository;
-
-  open my $REPOSITORIES, '-|', qw(git remote -v) or $self->abort("git remote -v: $!");
-  while (<$REPOSITORIES>) {
-    next unless /^origin\s+(\S+).*push/;
-    $repository = $1;
-    last;
-  }
-
-  $repository ||= lc sprintf 'https://github.com/%s/%s',
-    $self->config('username') || $ENV{GITHUB_USERNAME} || scalar(getpwuid $<),
-    $self->project_name =~ s!::!-!gr;
-  $repository =~ s!^[^:]+:!https://github.com/! unless $repository =~ /^http/;
-  warn "[ship::repository] $repository\n" if DEBUG;
-  $repository;
-};
-
-has silent => sub { $ENV{GIT_SHIP_SILENT} // 0 };
 
 # Need to be overridden in subclass
 sub build              { $_[0]->abort('build() is not available for %s',              ref $_[0]) }
@@ -49,18 +27,25 @@ sub abort {
 }
 
 sub config {
-  my $self = shift;
+  my ($self, $key, $value) = @_;
   my $config = $self->{config} ||= $self->_build_config;
 
   # Get all
-  return $config unless @_;
+  return $config if @_ == 1;
 
-  # Get key
-  my $key = shift;
-  return $config->{$key} // $self->_build_config_param($key) unless @_;
+  # Get single key
+  if (@_ == 2) {
+    return $config->{$key} if exists $config->{$key};
 
-  # Set key
-  $config->{$key} = $_[0];
+    my $param_method = "_build_config_param_$key";
+    return $self->$param_method if $self->can($param_method);
+
+    my $env_key = uc "GIT_SHIP_$key";
+    return $ENV{$env_key} // '';
+  }
+
+  # Set single key
+  $config->{$key} = $value;
   return $self;
 }
 
@@ -95,7 +80,7 @@ sub new {
   return $self;
 }
 
-sub render {
+sub render_template {
   my ($self, $name, $args) = @_;
   my $template = $self->_get_template($name) or $self->abort("Could not find template for $name");
 
@@ -105,13 +90,13 @@ sub render {
   # Render to file
   my $file = path split '/', $name;
   if (-e $file and !$args->{force}) {
-    say "# $file exists" unless $self->silent;
+    say "# $file exists" unless SILENT;
     return $self;
   }
 
   $file->dirname->make_path unless -d $file->dirname;
   $file->spurt($template->process({%$args, ship => $self}));
-  say "# Generated $file" unless $self->silent;
+  say "# Generated $file" unless SILENT;
   return $self;
 }
 
@@ -141,7 +126,7 @@ sub start {
   }
 
   $self->system(qw(git init-db)) unless -d '.git' and @_;
-  $self->render('.gitignore');
+  $self->render_template('.gitignore');
   $self->system(qw(git add .));
   $self->system(qw(git commit -a -m), "git ship start") if @_;
   $self;
@@ -152,7 +137,7 @@ sub system {
   my @fh = (undef);
   my $exit_code;
 
-  if ($self->silent) {
+  if (SILENT) {
     my $output = '';
     push @fh, (\$output, \$output);
   }
@@ -167,7 +152,7 @@ sub system {
   $exit_code = $? >> 8;
   return $self unless $exit_code;
 
-  if ($self->silent) {
+  if (SILENT) {
     chomp $fh[1];
     $self->abort("'$program @args' failed: $exit_code (${$fh[1]})");
   }
@@ -198,23 +183,49 @@ sub _build_config {
   return $config;
 }
 
-sub _build_config_param {
-  my ($self, $key) = @_;
+sub _build_config_param_author {
+  my $self = shift;
+  my $format = shift || '%an <%ae>';
 
-  my $env_key = uc "GIT_SHIP_$key";
-  return $ENV{$env_key} if defined $ENV{$env_key};
-
-  my $param_method = "_build_config_param_$key";
-  return $self->can($param_method) ? $self->$param_method : '';
+  open my $GIT, '-|', qw(git log), "--format=$format"
+    or $self->abort("git log --format=$format: $!");
+  my $author = readline $GIT;
+  $self->abort("Could not find any author in git log") unless $author;
+  chomp $author;
+  warn "[ship::author] $format = $author\n" if DEBUG;
+  return $author;
 }
-
-sub _build_config_param_homepage { shift->repository =~ s!\.git$!!r }
 
 sub _build_config_param_bugtracker {
-  join('/', shift->config('homepage'), 'issues') =~ s!(\w)//!$1/!r;
+  return $ENV{GIT_SHIP_BUGTRACKER}
+    || join('/', shift->config('homepage'), 'issues') =~ s!(\w)//!$1/!r;
 }
 
-sub _build_config_param_license {'artistic_2'}
+sub _build_config_param_homepage {
+  return $ENV{GIT_SHIP_HOMEPAGE} || shift->config('repository') =~ s!\.git$!!r;
+}
+
+sub _build_config_param_license      { $ENV{GIT_SHIP_LICENSE}      || 'artistic_2' }
+sub _build_config_param_project_name { $ENV{GIT_SHIP_PROJECT_NAME} || 'unknown' }
+
+sub _build_config_param_repository {
+  my $self = shift;
+  my $repository;
+
+  open my $REPOSITORIES, '-|', qw(git remote -v) or $self->abort("git remote -v: $!");
+  while (<$REPOSITORIES>) {
+    next unless /^origin\s+(\S+).*push/;
+    $repository = $1;
+    last;
+  }
+
+  $repository ||= lc sprintf 'https://github.com/%s/%s',
+    $self->config('username') || $ENV{GITHUB_USERNAME} || scalar(getpwuid $<),
+    $self->config('project_name') =~ s!::!-!gr;
+  $repository =~ s!^[^:]+:!https://github.com/! unless $repository =~ /^http/;
+  warn "[ship::repository] $repository\n" if DEBUG;
+  $repository;
+}
 
 sub _get_template {
   my ($self, $name) = @_;
@@ -252,12 +263,9 @@ The main focus is to automate away the boring steps, but at the same time not
 get in your (or any random contributor's) way. Problems should be solved with
 sane defaults according to standard rules instead of enforcing more rules.
 
-This project can also L</start> (create) a new project, just L</build> (prepare
-for L<shipping|/ship>), L</ship> (upload), and L</clean> projects.
-
 L<App::git::ship> differs from other tools like L<dzil|Dist::Zilla> by not
-enforcing new ways to do things, but rather incorporates with the existing
-way.
+requiring any configuration except for a file containing the credentials for
+uploading to CPAN.
 
 Example structure and how L<App::git::ship> works on your files:
 
@@ -272,46 +280,22 @@ be used by L<Carton> and other tools, so generating C<cpanfile> from
 Makefile.PL would simply not be possible. Other data used to generate
 Makefile.PL are:
 
-"NAME" and "LICENSE" will have values from .ship.conf L</project_name> and
-L</license>. "AUTHOR" will have the name and email from the last git committer.
-"ABSTRACT_FROM" and "VERSION_FROM" are fetched from the
-L<main_module_path|App::git::ship::perl/main_module_path>.
+"NAME" and "LICENSE" will have values from L</GIT_SHIP_PROJECT_NAME> and
+L</GIT_SHIP_LICENSE>.  "AUTHOR" will have the name and email from
+L</GIT_SHIP_AUTHOR> or the last git committer.  "ABSTRACT_FROM" and
+"VERSION_FROM" are fetched from the L<App::git::ship::perl/main_module_path>.
 "EXE_FILES" will be the files in C<bin/> and C<script/> which are executable.
-"META_MERGE" will use data from L</bugtracker>, L</homepage>, and L</repository>.
-It is important to define your license in your .ship.conf before starting.
+"META_MERGE" will use data from L</GIT_SHIP_BUGTRACKER>, L</GIT_SHIP_HOMEPAGE>,
+and L</repository>.
 
-Both C<cpanfile> and C<Makefile.PL> are automatically created for you if you set
-the class to App::git::ship::perl or you specify the
-L<main_module_path|App::git::ship::perl/main_module_path> as an argument to git
-start.
+=item * my-app/Changes or my-app/CHANGELOG.md
 
-=item * my-app/CHANGELOG.md or my-app/Changes
-
-The Changes file will be updated with the correct L<timestamp|/new_version_format>,
-from when you ran the L</build> action. The Changes file will also be the source
-for L</next_version>. Both C<CHANGELOG.md> and C<Changes> are valid sources.
-App::git::ship looks for a version-timestamp line with the case-sensitive text "Not
-Released" as the the timestamp.
-
-Changes is automatically created for you if you set the class to
-App::git::ship::perl or your specify the
-L<main_module_path|App::git::ship::perl/main_module_path> as an argument to git
-start.
-
-=item * my-app/README
-
-Will be updated with the main module documentation using the command below:
-
-  $ perldoc -tT $main_module_path > README;
-
-If you don't like this format, you can create and write C<README.md> manually
-instead. The presence of that file will prevent "my-app/README" from getting
-generated.
-
-Both C<README> and C<README.pod> are automatically created for you if you set
-the class to App::git::ship::perl or your specify the
-L<main_module_path|App::git::ship::perl/main_module_path> as an argument to git
-start.
+The Changes file will be updated with the correct
+L<GIT_SHIP_NEW_VERSION_FORMAT>, from when you ran the L</build> action. The
+Changes file will also be the source for L</GIT_SHIP_NEXT_VERSION>. Both
+C<CHANGELOG.md> and C<Changes> are valid sources.  L<App::git::ship> looks for
+a version-timestamp line with the case-sensitive text "Not Released" as the the
+timestamp.
 
 =item * my-app/lib/My/App.pm
 
@@ -334,45 +318,35 @@ customized afterwards and will not be overwritten.
 =item * .git
 
 It is important to commit any uncommitted code to your git repository beforing
-building.
+building and that you have a remote setup in your git repository before
+shipping.
 
-It is important to have a remote setup in your git repository before shipping.
-It is important to have a ~/.pause file setup with 'user' and 'password' entries
-before shipping.
+=item * .pause
+
+You have to have a C<$HOME/.pause> file before shipping. It should look like this:
+
+  user yourcpanusername
+  password somethingsupersecret
 
 =back
 
 =head1 SYNOPSIS
 
-=head2 Existing project
+=head2 git ship
 
-  # Set up git ship config and basic files for a Perl repo
-  $ cd my-project
+  # Set up basic files for a Perl repo
+  # (Not needed if you already have an existing repo)
   $ git ship start lib/My/Project.pm
+  $ git ship start
 
-  # make changes
+  # Make changes
   $ $EDITOR lib/My/Project.pm
 
-  # build first if you want to investigate the changes
+  # Build first if you want to investigate the changes
   $ git ship build
 
-  # ship the project to git (and CPAN)
-  $ git ship
-
-=head2 New project
-
-  $ git ship -h
-  $ git ship start My/Project.pm
-  $ cd my-project
-
-  # make changes
-  $ $EDITOR lib/My/Project.pm
-
-  # build first if you want to investigate the changes
-  $ git ship build
-
-  # ship the project to git (and CPAN)
-  $ git ship
+  # Ship the project to git (and CPAN)
+  $ git ship ship
 
 =head2 Git aliases
 
@@ -386,58 +360,82 @@ before shipping.
   # git start My/Project.pm
   $ git config --global alias.start = ship start
 
-=head2 For developer
+=head1 ENVIRONMENT VARIABLES
 
-  package App::git::ship::some_language;
-  use App::git::ship -base;
+Environment variables can also be set in a config file named C<.ship.conf>, in
+the root of the project directory. The format is:
 
-  # define attributes
-  has some_attribute => sub {
-    my $self = shift;
-    return "default value";
-  };
+  # some comment
+  bugtracker = whatever
+  new_version_format = %v %Y-%m-%dT%H:%M:%S%z
 
-  # override the methods defined in App::git::ship
-  sub build {
-    my $self = shift;
-  }
+Any of the keys are the same as all the L</ENVIRONMENT VARIABLES>, but without
+"GIT_SHIP_".
 
-  1;
+=head2 GIT_SHIP_AFTER_SHIP
 
-=head1 CONFIG
+It is possible to add hooks. These hooks are
+programs that runs in your shell. Example hooks:
 
-C<App::git::ship> automatically generates a config file when you L</start> a
-new project.
+  GIT_SHIP_AFTER_SHIP="bash script/new-release.sh"
+  GIT_SHIP_AFTER_BUILD="rm -r lib/My/App/templates lib/My/App/public"
+  GIT_SHIP_AFTER_SHIP="cat Changes | mail -s "Changes for My::App" all@my-app.com"
 
-=over 4
+=head2 GIT_SHIP_AFTER_BUILD
 
-=item * bugtracker
+See L</GIT_SHIP_AFTER_SHIP>.
+
+=head2 GIT_SHIP_AUTHOR
+
+See L</author>.
+
+=head2 GIT_SHIP_BEFORE_BUILD
+
+See L</GIT_SHIP_AFTER_SHIP>.
+
+=head2 GIT_SHIP_BEFORE_SHIP
+
+See L</GIT_SHIP_AFTER_SHIP>.
+
+=head2 GIT_SHIP_BUGTRACKER
 
 URL to the bugtracker for this project.
 
-=item * build_test_options
+=head2 GIT_SHIP_BUILD_TEST_OPTIONS
 
 This holds the arguments for the test program to use when building the
 project. The default is to not automatically run the tests. Example value:
 
   build_test_options = -l -j4
 
-=item * class
+=head2 GIT_SHIP_CHANGELOG_FILENAME
+
+Defaults to either "CHANGELOG.md" or "Changes".
+
+=head2 GIT_SHIP_CLASS
 
 This class is used to build the object that runs all the actions on your
 project. This is autodetected by looking at the structure and files in
 your project. For now this value can be L<App::git::ship> or
 L<App::git::ship::perl>, but any customization is allowed.
 
-=item * homepage
+=head2 GIT_SHIP_DEBUG
+
+Setting this variable will make "git ship" output more information.
+
+=head2 GIT_SHIP_HOMEPAGE
 
 URL to the home page for this project.
 
-=item * license
+=head2 GIT_SHIP_LICENSE
 
 The name of the license to use. Defaults to "artistic_2".
 
-=item * new_version_format
+=head2 GIT_SHIP_MAIN_MODULE_PATH
+
+Path tot the main module in your project.
+
+=head2 GIT_SHIP_NEW_VERSION_FORMAT
 
 This is optional, but specifies the version format in your "Changes" file.
 The example below will result in "## 0.42 (2014-01-28)".
@@ -449,80 +447,29 @@ on to L<POSIX/strftime>.
 
 The default is "%v %Y-%m-%dT%H:%M:%S%z".
 
-=item * project_name
+=head2 GIT_SHIP_NEXT_VERSION
+
+Defaults to the version number in L</GIT_SHIP_MAIN_MODULE_PATH> + "0.01".
+
+=head2 GIT_SHIP_PROJECT_NAME
 
 This name is extracted from either the L<App::git::ship::perl/main_module_path>
 or defaults to "unknown" if no project name could be found. Example:
 
-  project_name = My::App
+=head2 GIT_SHIP_SILENT
 
-=item * Comments
+Setting this variable will make "git ship" output less information.
 
-Comments are made by adding the hash symbol (#) followed by text. If you want
-to use the "#" as a value, it needs to be escaped using "\#". Examples:
-
-  # This whole line is skipped
-  parameter = 123 # The end of this line is skipped
-  parameter = some \# value with hash
-
-=item * Hooks
-
-It is possible to add hooks to the L</CONFIG> file. These hooks are
-programs that runs in your shell. Example L<.ship|/CONFIG> file with hooks:
-
-  before_build = bash script/new-release.sh
-  after_build = rm -r lib/My/App/templates lib/My/App/public
-  after_ship = cat Changes | mail -s "Changes for My::App" all@my-app.com
-
-Possible hooks are C<before_build>, C<after_build>, C<before_ship>, and C<after_ship>.
-
-=back
-
-=head1 ATTRIBUTES
-
-=head2 project_name
-
-  $str = $self->project_name;
-
-Holds the name of the current project. This attribute can be read from
-L</config>.
-
-=head2 repository
-
-  $str = $self->repository;
-
-Returns the URL to the first repository that points to "origin".
-This attribute can be read from L</config>.
-
-The username is detected by the uid on your OS, you can override this by
-setting GIT_SHIP_USERNAME.
-
-=head2 silent
-
-  $bool = $self->silent;
-  $self = $self->silent($bool);
-
-Set this to true if you want less logging. By default silent is false.
+=head2 GIT_SHIP_USERNAME
 
 =head1 METHODS
 
 =head2 abort
 
-  $self->abort($str);
-  $self->abort($format, @args);
+  $ship->abort($str);
+  $ship->abort($format, @args);
 
 Will abort the application run with an error message.
-
-=head2 attr
-
-  $class = $class->attr($name => sub { my $self = shift; return $default_value });
-
-or ...
-
-  use App::git::ship -base;
-  has $name => sub { my $self = shift; return $default_value };
-
-Used to create an attribute with a lazy builder.
 
 =head2 build
 
@@ -541,15 +488,17 @@ auto-detect from current working directory.
 
 =head2 config
 
-  $hash_ref = $self->config;
+  $hash_ref = $ship->config;
+  $str      = $ship->config($name);
+  $self     = $ship->config($name => $value);
 
 Holds the configuration from end user. The config is by default read from
 C<.ship.conf> in the root of your project.
 
 =head2 detect
 
-  $class = $self->detect;
-  $class = $self->detect($file);
+  $class = $ship->detect;
+  $class = $ship->detect($file);
 
 Will detect the module which can be used to build the project. This
 can be read from the "class" key in L</config> or will in worse
@@ -557,19 +506,19 @@ case default to L<App::git::ship>.
 
 =head2 dump
 
-  $str = $self->dump($any);
+  $str = $ship->dump($any);
 
 Will serialize C<$any> into a perl data structure, using L<Data::Dumper>.
 
 =head2 new
 
-  $self = $class->new(%attributes);
+  $ship = App::git::ship->new(\%attributes);
 
 Creates a new instance of C<$class>.
 
-=head2 render
+=head2 render_template
 
-  $self->render($file, \%args);
+  $ship->render_template($file, \%args);
 
 Used to render a template by the name C<$file> to a C<$file>. The template
 needs to be defined in the C<DATA> section of the current class or one of
@@ -577,7 +526,7 @@ the super classes.
 
 =head2 run_hook
 
-  $self->run_hook($name);
+  $ship->run_hook($name);
 
 Used to run a hook before or after an event. The hook is a command which
 needs to be defined in the config file. Example config line parameter:
@@ -585,6 +534,8 @@ needs to be defined in the config file. Example config line parameter:
   before_build = echo foo > bar.txt
 
 =head2 ship
+
+  $ git ship ship
 
 This method ships the project to some online repository. The default behavior
 is to make a new tag and push it to "origin". Push occurs only if origin is
@@ -616,7 +567,7 @@ See L<CPAN::Meta::Spec/license> for alternatives.
 
 =head2 system
 
-  $self->system($program, @args);
+  $ship->system($program, @args);
 
 Same as perl's C<system()>, but provides error handling and logging.
 
@@ -624,19 +575,6 @@ Same as perl's C<system()>, but provides error handling and logging.
 
 This method checks test coverage for the project. The default behavior is to
 L</abort>. Needs to be overridden in the subclass.
-
-=head2 import
-
-  use App::git::ship;
-  use App::git::ship -base;
-  use App::git::ship "App::git::ship::perl";
-
-Called when this class is used. It will automatically enable L<strict>,
-L<warnings>, L<utf8> and Perl 5.10 features.
-
-C<-base> will also make sure the calling class inherits from L<App::git::ship>
-and gets the L<has|/attr> function. Does the same with a class name, except
-that it will then inherit from the given class.
 
 =head1 SEE ALSO
 
@@ -659,7 +597,7 @@ One magical tool for doing it all in one bang.
 
 =head1 COPYRIGHT AND LICENSE
 
-Copyright (C) 2014-2016, Jan Henning Thorsen
+Copyright (C) 2014-2018, Jan Henning Thorsen
 
 This program is free software, you can redistribute it and/or modify it under
 the terms of the Artistic License version 2.0.
@@ -678,4 +616,4 @@ __DATA__
 *.swp
 /local
 @@ test
-<%= $x %>: <%= $ship->repository %> # test
+<%= $x %>: <%= $ship->config('repository') %> # test
