@@ -153,7 +153,7 @@ PATH_PART:
   for my $p (@project_name) {
     opendir my $DH, $path or $self->abort("Cannot find project name from $path: $!");
 
-    for (readdir $DH) {
+    for (sort { length $b <=> length $a } readdir $DH) {
       my $f = "$_";
       s!\.pm$!!;
       next unless lc eq lc $p;
