@@ -2,6 +2,7 @@ Revision history for perl distribution App-git-ship
 
 0.28 Not Released
  - Changed cpanfile to be optional
+ - Changed "git ship clean" to run "make clean" first
  - Depend on Mojolicious to make the code base easier to maintain
  - Can read config from environment
  - Do not need a .ship.conf anymore

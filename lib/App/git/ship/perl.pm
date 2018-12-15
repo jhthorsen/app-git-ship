@@ -37,6 +37,8 @@ sub clean {
   my $all   = shift // 1;
   my @files = qw(Makefile Makefile.old MANIFEST MYMETA.json MYMETA.yml);
 
+  $self->system(qw(make clean)) if -e 'Makefile';
+
   push @files, qw(Changes.bak META.json META.yml) if $all;
   push @files, $self->_dist_files->each;
 
