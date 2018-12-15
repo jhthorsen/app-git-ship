@@ -17,7 +17,7 @@ sub build {
     if $self->config('build_test_options');
   $self->clean(0);
   $self->run_hook('before_build');
-  $self->_render_makefile_pl;
+  $self->_render_makefile_pl if -e 'cpanfile';
   $self->_timestamp_to_changes;
   $self->_update_version_info;
   $self->_make('manifest');
@@ -132,7 +132,7 @@ sub update {
   $self->abort("Cannot update with .git directory. Forgot to run 'git ship start'?")
     unless -d '.git';
 
-  $self->_render_makefile_pl;
+  $self->_render_makefile_pl if -e 'cpanfile';
   $self->_update_changes if $changes eq 'Changes';
   $self->render_template('t/00-basic.t', {force => 1});
   $self;
