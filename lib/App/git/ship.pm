@@ -14,9 +14,8 @@ use constant SILENT => $ENV{GIT_SHIP_SILENT} || 0;
 our $VERSION = '0.28';
 
 # Need to be overridden in subclass
-sub build              { $_[0]->abort('build() is not available for %s',              ref $_[0]) }
+sub build { $_[0]->abort('build() is not available for %s', ref $_[0]) }
 sub can_handle_project { $_[0]->abort('can_handle_project() is not available for %s', ref $_[0]) }
-sub test_coverage      { $_[0]->abort('test_coverage() is not available for %s',      ref $_[0]) }
 
 sub abort {
   my ($self, $format, @args) = @_;
@@ -52,9 +51,8 @@ sub config {
 sub detect {
   my ($self, $file) = (@_, '');
 
-  if (!$file and $self->config('class')) {
-    my $class = $self->config('class');
-    eval "require $class;1" or $self->abort("Could not load $class: $@");
+  if (my $class = $self->config('class')) {
+    $self->abort("Could not load $class: $@") unless eval "require $class;1";
     return $class;
   }
 
@@ -257,101 +255,11 @@ App::git::ship - Git command for shipping your project
 
 0.28
 
-=head1 DESCRIPTION
-
-L<App::git::ship> is a L<git|http://git-scm.com/> command for building and
-shipping your project.
-
-The main focus is to automate away the boring steps, but at the same time not
-get in your (or any random contributor's) way. Problems should be solved with
-sane defaults according to standard rules instead of enforcing more rules.
-
-L<App::git::ship> differs from other tools like L<dzil|Dist::Zilla> by not
-requiring any configuration except for a file containing the credentials for
-uploading to CPAN.
-
-Example structure and how L<App::git::ship> works on your files:
-
-=over 4
-
-=item * my-app/cpanfile and my-app/Makefile.PL
-
-The C<cpanfile> is used to build the "PREREQ_PM" and "BUILD_REQUIRES"
-structures in the L<ExtUtils::MakeMaker> based C<Makefile.PL> build file.
-The reason for this is that C<cpanfile> is a more powerful format that can
-be used by L<Carton> and other tools, so generating C<cpanfile> from
-Makefile.PL would simply not be possible. Other data used to generate
-Makefile.PL are:
-
-"NAME" and "LICENSE" will have values from L</GIT_SHIP_PROJECT_NAME> and
-L</GIT_SHIP_LICENSE>.  "AUTHOR" will have the name and email from
-L</GIT_SHIP_AUTHOR> or the last git committer.  "ABSTRACT_FROM" and
-"VERSION_FROM" are fetched from the L<App::git::ship::perl/main_module_path>.
-"EXE_FILES" will be the files in C<bin/> and C<script/> which are executable.
-"META_MERGE" will use data from L</GIT_SHIP_BUGTRACKER>, L</GIT_SHIP_HOMEPAGE>,
-and L</repository>.
-
-=item * my-app/Changes or my-app/CHANGELOG.md
-
-The Changes file will be updated with the correct
-L<GIT_SHIP_NEW_VERSION_FORMAT>, from when you ran the L</build> action. The
-Changes file will also be the source for L</GIT_SHIP_NEXT_VERSION>. Both
-C<CHANGELOG.md> and C<Changes> are valid sources.  L<App::git::ship> looks for
-a version-timestamp line with the case-sensitive text "Not Released" as the the
-timestamp.
-
-=item * my-app/lib/My/App.pm
-
-This L<file|App::git::ship::perl/main_module_path> will be updated with the
-version number from the Changes file.
-
-=item * .gitignore and MANIFEST.SKIP
-
-Unless these files exist, they will be generated from a template which skips
-the most common files. The default content of these two files might change over
-time if new temp files are created by new editors or some other formats come
-along.
-
-=item * t/00-basic.t
-
-Unless this file exists, it will be created with a test for checking
-that your modules can compile and that the POD is correct. The file can be
-customized afterwards and will not be overwritten.
-
-=item * .git
-
-It is important to commit any uncommitted code to your git repository beforing
-building and that you have a remote setup in your git repository before
-shipping.
-
-=item * .pause
-
-You have to have a C<$HOME/.pause> file before shipping. It should look like this:
-
-  user yourcpanusername
-  password somethingsupersecret
-
-=back
-
 =head1 SYNOPSIS
 
-=head2 git ship
+See L<App::git::ship::perl/SYNOPSIS> for how to build Perl projects.
 
-  # Set up basic files for a Perl repo
-  # (Not needed if you already have an existing repo)
-  $ git ship start lib/My/Project.pm
-  $ git ship start
-
-  # Make changes
-  $ $EDITOR lib/My/Project.pm
-
-  # Build first if you want to investigate the changes
-  $ git ship build
-
-  # Ship the project to git (and CPAN)
-  $ git ship ship
-
-=head2 Git aliases
+Below is a list of useful git aliases:
 
   # git build
   $ git config --global alias.build = ship build
@@ -363,6 +271,23 @@ You have to have a C<$HOME/.pause> file before shipping. It should look like thi
   # git start My/Project.pm
   $ git config --global alias.start = ship start
 
+=head1 DESCRIPTION
+
+L<App::git::ship> is a L<git|http://git-scm.com/> command for building and
+shipping your project.
+
+The main focus is to automate away the boring steps, but at the same time not
+get in your (or any random contributor's) way. Problems should be solved with
+sane defaults according to standard rules instead of enforcing more rules.
+
+L<App::git::ship> differs from other tools like L<dzil|Dist::Zilla> by I<NOT>
+requiring any configuration except for a file containing the credentials for
+uploading to CPAN.
+
+=head2 Supported project types
+
+Currently, only L<App::git::ship::perl> is supported.
+
 =head1 ENVIRONMENT VARIABLES
 
 Environment variables can also be set in a config file named C<.ship.conf>, in
@@ -372,8 +297,11 @@ the root of the project directory. The format is:
   bugtracker = whatever
   new_version_format = %v %Y-%m-%dT%H:%M:%S%z
 
-Any of the keys are the same as all the L</ENVIRONMENT VARIABLES>, but without
-"GIT_SHIP_".
+Any of the keys are the lower case version of L</ENVIRONMENT VARIABLES>, but
+without the "GIT_SHIP_" prefix.
+
+Note however that all environment variables are optional, and in many cases
+L<App::git::ship> will simply do the right thing, without any configuration.
 
 =head2 GIT_SHIP_AFTER_SHIP
 
@@ -388,10 +316,6 @@ programs that runs in your shell. Example hooks:
 
 See L</GIT_SHIP_AFTER_SHIP>.
 
-=head2 GIT_SHIP_AUTHOR
-
-See L</author>.
-
 =head2 GIT_SHIP_BEFORE_BUILD
 
 See L</GIT_SHIP_AFTER_SHIP>.
@@ -403,17 +327,6 @@ See L</GIT_SHIP_AFTER_SHIP>.
 =head2 GIT_SHIP_BUGTRACKER
 
 URL to the bugtracker for this project.
-
-=head2 GIT_SHIP_BUILD_TEST_OPTIONS
-
-This holds the arguments for the test program to use when building the
-project. The default is to not automatically run the tests. Example value:
-
-  build_test_options = -l -j4
-
-=head2 GIT_SHIP_CHANGELOG_FILENAME
-
-Defaults to either "CHANGELOG.md" or "Changes".
 
 =head2 GIT_SHIP_CLASS
 
@@ -434,38 +347,14 @@ URL to the home page for this project.
 
 The name of the license to use. Defaults to "artistic_2".
 
-=head2 GIT_SHIP_MAIN_MODULE_PATH
-
-Path tot the main module in your project.
-
-=head2 GIT_SHIP_NEW_VERSION_FORMAT
-
-This is optional, but specifies the version format in your "Changes" file.
-The example below will result in "## 0.42 (2014-01-28)".
-
-  new_version_format = \#\# %v (%F)
-
-"%v" will be replaced by the version, while the format arguments are passed
-on to L<POSIX/strftime>.
-
-The default is "%v %Y-%m-%dT%H:%M:%S%z".
-
-=head2 GIT_SHIP_NEXT_VERSION
-
-Defaults to the version number in L</GIT_SHIP_MAIN_MODULE_PATH> + "0.01".
-
-=head2 GIT_SHIP_PROJECT_NAME
-
-This name is extracted from either the L<App::git::ship::perl/main_module_path>
-or defaults to "unknown" if no project name could be found. Example:
-
 =head2 GIT_SHIP_SILENT
 
 Setting this variable will make "git ship" output less information.
 
-=head2 GIT_SHIP_USERNAME
-
 =head1 METHODS
+
+These methods are interesting in case you want to extend L<App::git::ship> with
+your own functionality. L<App::git::ship::perl> does exactly this.
 
 =head2 abort
 
@@ -475,6 +364,8 @@ Setting this variable will make "git ship" output less information.
 Will abort the application run with an error message.
 
 =head2 build
+
+  $ship->build;
 
 This method builds the project. The default behavior is to L</abort>.
 Needs to be overridden in the subclass.
@@ -489,6 +380,9 @@ true if this module can handle the given git project.
 This is a class method which gets a file as input to detect or have to
 auto-detect from current working directory.
 
+All the modules in the L<App::git::ship> namespace will be loaded and asked if
+they can handle the given project you are in or trying to create.
+
 =head2 config
 
   $hash_ref = $ship->config;
@@ -496,16 +390,19 @@ auto-detect from current working directory.
   $self     = $ship->config($name => $value);
 
 Holds the configuration from end user. The config is by default read from
-C<.ship.conf> in the root of your project.
+C<.ship.conf> in the root of your project if such a file exists.
+L</ENVIRONMENT VARIABLES> can also be used to build the config, but the
+settings in C<.ship.conf> has priority.
 
 =head2 detect
 
   $class = $ship->detect;
   $class = $ship->detect($file);
 
-Will detect the module which can be used to build the project. This
-can be read from the "class" key in L</config> or will in worse
-case default to L<App::git::ship>.
+Will detect the sub class in the L<App::git::ship::perl> namespace which can be
+used to handle a project. Will first check L</GIT_SHIP_CLASS> or call
+L</can_handle_project> on all the classes in the L<App::git::ship::perl>
+namespace if not.
 
 =head2 dump
 
@@ -531,14 +428,14 @@ the super classes.
 
   $ship->run_hook($name);
 
-Used to run a hook before or after an event. The hook is a command which
-needs to be defined in the config file. Example config line parameter:
-
-  before_build = echo foo > bar.txt
+Used to run a hook before or after an event. The hook is a command which needs
+to be defined in L</config>. See also L</GIT_SHIP_AFTER_BUILD>,
+L</GIT_SHIP_AFTER_SHIP>, L</GIT_SHIP_BEFORE_BUILD> and
+L</GIT_SHIP_BEFORE_SHIP>.
 
 =head2 ship
 
-  $ git ship ship
+  $ship->ship;
 
 This method ships the project to some online repository. The default behavior
 is to make a new tag and push it to "origin". Push occurs only if origin is
@@ -546,38 +443,16 @@ defined in git.
 
 =head2 start 
 
+  $ship->start;
+
 This method is called when initializing the project. The default behavior is
 to populate L</config> with default data:
-
-=over 4
-
-=item * bugtracker
-
-URL to the bug tracker. Will be the the L</repository> URL without ".git", but
-with "/issues" at the end instead.
-
-=item * homepage
-
-URL to the project homepage. Will be the the L</repository> URL, without ".git".
-
-=item * license
-
-The name of the license. Defaults to L<artistic_2|http://www.opensource.org/licenses/artistic-license-2.0>.
-
-See L<CPAN::Meta::Spec/license> for alternatives.
-
-=back
 
 =head2 system
 
   $ship->system($program, @args);
 
 Same as perl's C<system()>, but provides error handling and logging.
-
-=head2 test_coverage
-
-This method checks test coverage for the project. The default behavior is to
-L</abort>. Needs to be overridden in the subclass.
 
 =head1 SEE ALSO
 

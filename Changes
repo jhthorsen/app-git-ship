@@ -1,5 +1,8 @@
 Revision history for perl distribution App-git-ship
 
+0.29 Not Released
+ - Restructure the documentation
+
 0.28 2018-12-15T11:51:01+0900
  - Changed cpanfile to be optional
  - Changed "git ship clean" to run "make clean" first

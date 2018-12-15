@@ -324,11 +324,130 @@ sub _update_version_info {
 
 App::git::ship::perl - Ship your Perl module
 
+=head1 SYNOPSIS
+
+  # Set up basic files for a Perl repo
+  # (Not needed if you already have an existing repo)
+  $ git ship start lib/My/Project.pm
+  $ git ship start
+
+  # Make changes
+  $ $EDITOR lib/My/Project.pm
+
+  # Build first if you want to investigate the changes
+  $ git ship build
+
+  # Ship the project to git (and CPAN)
+  $ git ship ship
+
 =head1 DESCRIPTION
 
-L<App::git::ship::perl> is a module that can ship your Perl module.
+L<App::git::ship::perl> is a module that can ship your Perl module. This tool
+differs from other tools like dzil by *NOT* requiring any configuration, except
+for a file containing the credentials for uploading to CPAN.
 
-See L<App::git::ship/SYNOPSIS>
+See also L<App::git::ship/DESCRIPTION>.
+
+Example structure and how L<App::git::ship> works on your files:
+
+=over 4
+
+=item * my-app/cpanfile and my-app/Makefile.PL
+
+The C<cpanfile> is used to build the "PREREQ_PM" and "BUILD_REQUIRES"
+structures in the L<ExtUtils::MakeMaker> based C<Makefile.PL> build file.
+The reason for this is that C<cpanfile> is a more powerful format that can
+be used by L<Carton> and other tools, so generating C<cpanfile> from
+Makefile.PL would simply not be possible. Other data used to generate
+Makefile.PL are:
+
+Note that the C<cpanfile> is optional and C<Makefile.PL> will be kept untouched
+unless C<cpanfile> exists.
+
+"NAME" and "LICENSE" will have values from L</GIT_SHIP_PROJECT_NAME> and
+L</GIT_SHIP_LICENSE>.  "AUTHOR" will have the name and email from
+L</GIT_SHIP_AUTHOR> or the last git committer.  "ABSTRACT_FROM" and
+"VERSION_FROM" are fetched from the L<App::git::ship::perl/main_module_path>.
+"EXE_FILES" will be the files in C<bin/> and C<script/> which are executable.
+"META_MERGE" will use data from L</GIT_SHIP_BUGTRACKER>, L</GIT_SHIP_HOMEPAGE>,
+and L</repository>.
+
+=item * my-app/Changes or my-app/CHANGELOG.md
+
+The Changes file will be updated with the correct
+L<GIT_SHIP_NEW_VERSION_FORMAT>, from when you ran the L</build> action. The
+Changes file will also be the source for L</GIT_SHIP_NEXT_VERSION>. Both
+C<CHANGELOG.md> and C<Changes> are valid sources.  L<App::git::ship> looks for
+a version-timestamp line with the case-sensitive text "Not Released" as the the
+timestamp.
+
+=item * my-app/lib/My/App.pm
+
+This L<file|App::git::ship::perl/main_module_path> will be updated with the
+version number from the Changes file.
+
+=item * .gitignore and MANIFEST.SKIP
+
+Unless these files exist, they will be generated from a template which skips
+the most common files. The default content of these two files might change over
+time if new temp files are created by new editors or some other formats come
+along.
+
+=item * t/00-basic.t
+
+Unless this file exists, it will be created with a test for checking
+that your modules can compile and that the POD is correct. The file can be
+customized afterwards and will not be overwritten.
+
+=item * .git
+
+It is important to commit any uncommitted code to your git repository beforing
+building and that you have a remote setup in your git repository before
+shipping.
+
+=item * .pause
+
+You have to have a C<$HOME/.pause> file before shipping. It should look like this:
+
+  user yourcpanusername
+  password somethingsupersecret
+
+=back
+
+=head1 ENVIRONMENT VARIABLES
+
+See L<App::git::ship/ENVIRONMENT VARIABLES> for more variables.
+
+=head2 GIT_SHIP_BUILD_TEST_OPTIONS
+
+This holds the arguments for the test program to use when building the
+project. The default is to not automatically run the tests. Example value:
+
+  GIT_SHIP_BUILD_TEST_OPTIONS="-l -j4"
+
+=head2 GIT_SHIP_CHANGELOG_FILENAME
+
+Defaults to either "CHANGELOG.md" or "Changes".
+
+=head2 GIT_SHIP_MAIN_MODULE_PATH
+
+Path to the main module in your project.
+
+=head2 GIT_SHIP_NEXT_VERSION
+
+Defaults to the version number in L</GIT_SHIP_MAIN_MODULE_PATH> + "0.01".
+
+=head2 GIT_SHIP_NEW_VERSION_FORMAT
+
+Use this to specify the version format in your "Changes" file.
+The example below will result in "## 0.42 (2014-01-28)".
+
+  GIT_SHIP_NEW_VERSION_FORMAT="\#\# %v (%F)"
+
+"%v" will be replaced by the version, while the format arguments are passed
+on to L<POSIX/strftime>.
+
+The default is "%v %Y-%m-%dT%H:%M:%S%z".
 
 =head1 METHODS
 
@@ -346,7 +465,7 @@ Call L</clean> to make sure the repository does not contain old build files.
 
 =item 2.
 
-Run L<prove|App::Prove> if C<build_test_options> is set in L</config>.
+Run L<prove|App::Prove> if L</GIT_SHIP_BUILD_TEST_OPTIONS> is set in L</config>.
 
 =item 3.
 
@@ -434,6 +553,8 @@ Used to create main module file template and generate C<cpanfile>, C<Changes>,
 C<MANIFEST.SKIP> and C<t/00-basic.t>.
 
 =head2 test_coverage
+
+  $ git ship test-coverage
 
 Use L<Devel::Cover> to check test coverage for the distribution.
 
