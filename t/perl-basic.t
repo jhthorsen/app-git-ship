@@ -3,7 +3,8 @@ use App::git::ship::perl;
 
 my $app = App::git::ship::perl->new;
 
-plan skip_all => 'Need to be run from the project root' unless -e 'lib/App/git/ship/perl.pm';
+use Mojo::File 'path';
+plan skip_all => 'Cannot be run with a version number' if path->basename =~ m!-\d+\.\d+$!;
 
 my $dist_file = 'App-git-SHIP.tar.gz';
 my $found     = 0;
