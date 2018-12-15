@@ -102,6 +102,7 @@ sub start {
   }
 
   $self->SUPER::start(@_);
+  $self->render_template('.travis.yml');
   $self->render_template('cpanfile');
   $self->render_template('Changes') if $changelog eq 'Changes';
   $self->render_template('MANIFEST.SKIP');
@@ -549,8 +550,8 @@ Run "after_ship" L<hook|App::git::ship/Hooks>.
 
   $ git ship start
 
-Used to create main module file template and generate C<cpanfile>, C<Changes>,
-C<MANIFEST.SKIP> and C<t/00-basic.t>.
+Used to create main module file template and generate C<.travis.yml>
+C<cpanfile>, C<Changes>, C<MANIFEST.SKIP> and C<t/00-basic.t>.
 
 =head2 test_coverage
 
@@ -593,6 +594,23 @@ __DATA__
 /META*
 /MYMETA*
 /pm_to_blib
+@@ .travis.yml
+# Enable Travis Continuous Integration at https://travis-ci.org
+# Learn more https://docs.travis-ci.com
+language: perl
+sudo: false
+perl:
+  - "5.28"
+  - "5.24"
+  - "5.16"
+  - "5.14"
+  - "5.10"
+install:
+  - "cpanm -n Devel::Cover Test::Pod Test::Pod::Coverage"
+  - "cpanm -n --installdeps --with-develop ."
+after_success: "cover -test -report coveralls"
+notifications:
+  email: false
 @@ cpanfile
 # You can install this project with curl -L http://cpanmin.us | perl - <%= $ship->config('repository') =~ s!\.git$!!r %>/archive/master.tar.gz
 requires "perl" => "5.10.0";

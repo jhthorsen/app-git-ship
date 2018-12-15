@@ -31,6 +31,14 @@ t::Util->test_file(
   qr{^/MYMETA}m,
 );
 
+t::Util->test_file(
+  '.travis.yml',
+  qr{language: perl},
+  qr{sudo: false},
+  qr{cpanm -n --installdeps --with-develop},
+  qr{email: false},
+);
+
 # same as for ship-start
 t::Util->test_file('cpanfile', qr{test_requires "Test::More" => "0\.88"});
 t::Util->test_file('Changes',  qr{^Revision history for perl distribution Perl-Start});

@@ -1,5 +1,9 @@
 Revision history for perl distribution App-git-ship
 
+0.30 Not Released
+ - Changed "git ship start" for perl to also build .travis.yml #15
+   Contributor: Roy Storey
+
 0.29 2018-12-15T16:59:19+0900
  - Restructure the documentation
 
