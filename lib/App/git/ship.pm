@@ -11,7 +11,7 @@ use Mojo::Template;
 use constant DEBUG  => $ENV{GIT_SHIP_DEBUG}  || 0;
 use constant SILENT => $ENV{GIT_SHIP_SILENT} || 0;
 
-our $VERSION = '0.28';
+our $VERSION = '0.29';
 
 # Need to be overridden in subclass
 sub build { $_[0]->abort('build() is not available for %s', ref $_[0]) }
@@ -253,7 +253,7 @@ App::git::ship - Git command for shipping your project
 
 =head1 VERSION
 
-0.28
+0.29
 
 =head1 SYNOPSIS
 
