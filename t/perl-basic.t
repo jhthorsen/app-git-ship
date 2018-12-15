@@ -22,8 +22,8 @@ like $app->_changes_to_commit_message, qr{Released version [\d\._]+\n\n\s+},
   '_changes_to_commit_message()';
 
 TODO: {
-  local $TODO = $^O eq 'linux' ? undef : 'No idea how to test this on other platforms';
-  is_deeply [$app->_exe_files], ['bin/git-ship'], 'exe_files: bin/git-ship';
+  local $TODO = -e 'script/git-ship' ? undef : 'No idea how to test this on other platforms';
+  is_deeply [$app->_exe_files], ['script/git-ship'], 'exe_files: git-ship';
 }
 
 SKIP: {
