@@ -226,7 +226,8 @@ sub _build_config_param_repository {
     $self->config('project_name') =~ s!::!-!gr;
   $repository =~ s!^[^:]+:!https://github.com/! unless $repository =~ /^http/;
   warn "[ship::repository] $repository\n" if DEBUG;
-  $repository;
+
+  return $repository;
 }
 
 sub _get_template {

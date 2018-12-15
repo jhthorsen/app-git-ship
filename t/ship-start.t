@@ -4,8 +4,7 @@ use App::git::ship;
 
 t::Util->goto_workdir('ship-start');
 
-my $app      = App::git::ship->new;
-my $username = getpwuid $<;
+my $app = App::git::ship->new;
 
 {
   eval { $app->start('foo.unknown') };
@@ -14,9 +13,9 @@ my $username = getpwuid $<;
 
   $app->start;
   ok -d '.git', '.git was created';
-  is $app->config('bugtracker'), "https://github.com/$username/unknown/issues",
+  like $app->config('bugtracker'), qr{https://github.com/[^/]+/unknown/issues},
     'bugtracker is set up';
-  is $app->config('homepage'), "https://github.com/$username/unknown", 'homepage is set up';
+  like $app->config('homepage'), qr{https://github.com/[^/]+/unknown}, 'homepage is set up';
   is $app->config('license'), 'artistic_2', 'license is set up';
 
   t::Util->test_file('.gitignore', qr{^\~\$}m, qr{^\*\.bak}m, qr{^\*\.old}m, qr{^\*\.swp}m,
