@@ -3,22 +3,22 @@ use App::git::ship::perl;
 
 my $app = App::git::ship::perl->new;
 
-{
-  my $dist_file = 'App-git-SHIP.tar.gz';
-  my $found     = 0;
+plan skip_all => 'Need to be run from the project root' unless -e 'lib/App/git/ship/perl.pm';
 
-  ok $app->can_handle_project, 'App::git::ship::perl can handle this project';
-  is $app->config('project_name'), 'App::git::ship', 'project_name()';
-  ok !$app->_dist_files->[0], 'found no dist file';
+my $dist_file = 'App-git-SHIP.tar.gz';
+my $found     = 0;
 
-  open my $FH, '>', $dist_file or die "Write $dist_file: $!";
-  close $FH;
-  like $app->_dist_files->[0], qr{\b$dist_file$}, "found $dist_file";
-  unlink $dist_file;
+ok $app->can_handle_project, 'App::git::ship::perl can handle this project';
+is $app->config('project_name'), 'App::git::ship', 'project_name()';
+ok !$app->_dist_files->[0], 'found no dist file';
 
-  like $app->_changes_to_commit_message, qr{Released version [\d\._]+\n\n\s+},
-    '_changes_to_commit_message()';
-}
+open my $FH, '>', $dist_file or die "Write $dist_file: $!";
+close $FH;
+like $app->_dist_files->[0], qr{\b$dist_file$}, "found $dist_file";
+unlink $dist_file;
+
+like $app->_changes_to_commit_message, qr{Released version [\d\._]+\n\n\s+},
+  '_changes_to_commit_message()';
 
 TODO: {
   local $TODO = $^O eq 'linux' ? undef : 'No idea how to test this on other platforms';
