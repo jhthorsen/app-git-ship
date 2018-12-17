@@ -17,6 +17,7 @@ my %WriteMakefileArgs = (
     'Module::CPANfile'    => '1.00',
     'Module::Find'        => '0.10',
     'Mojolicious'         => '8.00',
+    'Pod::Markdown'       => '3.00',
     'Test::Pod'           => '0',
     'Test::Pod::Coverage' => '0'
   },

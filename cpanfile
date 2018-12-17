@@ -1,5 +1,6 @@
 requires "Mojolicious"         => "8.00";
 requires "Applify"             => "0.06";
+requires "Pod::Markdown"       => "3.00";
 requires "CPAN::Uploader"      => "0.10";
 requires "ExtUtils::MakeMaker" => "6.00";
 requires "IPC::Run3"           => "0.04";

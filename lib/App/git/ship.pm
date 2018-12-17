@@ -441,7 +441,7 @@ This method ships the project to some online repository. The default behavior
 is to make a new tag and push it to "origin". Push occurs only if origin is
 defined in git.
 
-=head2 start 
+=head2 start
 
   $ship->start;
 

@@ -1,5 +1,8 @@
 Revision history for perl distribution App-git-ship
 
+0.31 Not Released
+ - Can generate README.md
+
 0.30 2018-12-15T17:16:09+0900
  - Changed "git ship start" for perl to also build .travis.yml #15
    Contributor: Roy Storey

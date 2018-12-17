@@ -2,8 +2,9 @@ package App::git::ship::perl;
 use Mojo::Base 'App::git::ship';
 
 use Module::CPANfile;
-use Mojo::File 'path';
+use Mojo::File qw(path tempfile);
 use POSIX qw(setlocale strftime LC_TIME);
+use Pod::Markdown;
 
 use constant DEBUG => $ENV{GIT_SHIP_DEBUG} || 0;
 
@@ -20,6 +21,7 @@ sub build {
   $self->_render_makefile_pl if -e 'cpanfile';
   $self->_timestamp_to_changes;
   $self->_update_version_info;
+  $self->_render_readme;
   $self->_make('manifest');
   $self->_make('dist');
   $self->run_hook('after_build');
@@ -129,20 +131,21 @@ sub test_coverage {
 }
 
 sub update {
-  my $self    = shift;
-  my $changes = $self->config('changelog_filename');
-
-  $self->abort("Cannot update with .git directory. Forgot to run 'git ship start'?")
-    unless -d '.git';
+  my $self = shift;
 
   $self->_render_makefile_pl if -e 'cpanfile';
-  $self->_update_changes if $changes eq 'Changes';
+  $self->_update_changes if $self->config('changelog_filename') eq 'Changes';
+  $self->_render_readme;
   $self->render_template('t/00-basic.t', {force => 1});
   $self;
 }
 
 sub _build_config_param_changelog_filename {
   (grep {-w} qw(CHANGELOG.md Changes))[0] || 'Changes';
+}
+
+sub _build_config_param_new_version_format {
+  return $ENV{GIT_SHIP_NEW_VERSION_FORMAT} || '%v %Y-%m-%dT%H:%M:%S%z';
 }
 
 sub _build_config_param_main_module_path {
@@ -254,6 +257,30 @@ sub _render_makefile_pl {
   $self->system(qw(perl -c Makefile.PL));    # test Makefile.PL
 }
 
+sub _render_readme {
+  my $self = shift;
+  my $skip;
+
+  if (-e 'README.md') {
+    my $re = "# NAME[\\n\\r\\s]+@{[$self->config('project_name')]}\\s-\\s";
+    $skip = path('README.md')->slurp =~ m!$re! ? undef : 'Custom README.md is in place';
+  }
+  elsif (my @alternative = path->list->grep(sub {/^README/i})->each) {
+    $skip = "@alternative exists.";
+  }
+
+  if ($skip) {
+    say "# Will not generate README.md: $skip" unless $self->SILENT;
+    return;
+  }
+
+  open my $README, '>', 'README.md' or die "Write README.md: $!";
+  my $parser = Pod::Markdown->new;
+  $parser->output_fh($README);
+  $parser->parse_string_document($self->config('main_module_path')->slurp);
+  say '# Generated README.md' unless $self->SILENT;
+}
+
 sub _timestamp_to_changes {
   my $self      = shift;
   my $changelog = $self->config('changelog_filename');
@@ -261,8 +288,8 @@ sub _timestamp_to_changes {
   my $release_line;
 
   $release_line = sub {
-    my $v = shift;
-    my $str = $self->config('new_version_format') || '%v %Y-%m-%dT%H:%M:%S%z';
+    my $v   = shift;
+    my $str = $self->config('new_version_format');
     $str =~ s!(%-?\d*)v!{ sprintf "${1}s", $v }!e;
     setlocale LC_TIME, 'C';
     $str = strftime $str, localtime;
@@ -284,19 +311,17 @@ sub _timestamp_to_changes {
 
 sub _update_changes {
   my $self = shift;
-  my $changes;
 
   unless (eval "require CPAN::Changes; 1") {
-    say "# Cannot update './Changes' without CPAN::Changes. Install using cpanm CPAN::Changes"
+    say "# Cannot update './Changes' without CPAN::Changes. Install using 'cpanm CPAN::Changes'."
       unless $self->SILENT;
     return;
   }
 
-  $changes = CPAN::Changes->load('Changes');
+  my $changes = CPAN::Changes->load('Changes');
   $changes->preamble(
     'Revision history for perl distribution ' . ($self->config('project_name') =~ s!::!-!gr));
-  open my $FH, '>', 'Changes' or $self->abort("Could not write CPAN::Changes to Changes: $!");
-  print $FH $changes->serialize;
+  path('Changes')->spurt($changes->serialize);
   say "# Generated Changes" unless $self->SILENT;
 }
 
@@ -376,7 +401,7 @@ and L</repository>.
 =item * my-app/Changes or my-app/CHANGELOG.md
 
 The Changes file will be updated with the correct
-L<GIT_SHIP_NEW_VERSION_FORMAT>, from when you ran the L</build> action. The
+L</GIT_SHIP_NEW_VERSION_FORMAT>, from when you ran the L</build> action. The
 Changes file will also be the source for L</GIT_SHIP_NEXT_VERSION>. Both
 C<CHANGELOG.md> and C<Changes> are valid sources.  L<App::git::ship> looks for
 a version-timestamp line with the case-sensitive text "Not Released" as the the
