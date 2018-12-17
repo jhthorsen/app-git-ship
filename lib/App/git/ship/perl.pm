@@ -688,6 +688,7 @@ WriteMakefile(%WriteMakefileArgs);
 ^MANIFEST\.SKIP
 ^README\.md
 ^README\.pod
+^\.travis.yml
 @@ t/00-basic.t
 use Test::More;
 use File::Find;
