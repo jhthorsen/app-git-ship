@@ -164,6 +164,7 @@ PATH_PART:
       s!\.pm$!!;
       next unless lc eq lc $p;
       $path = path $path, $f;
+      last PATH_PART unless -d $path;
       next PATH_PART;
     }
   }

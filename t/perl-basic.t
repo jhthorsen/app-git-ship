@@ -1,11 +1,7 @@
 use Test::More;
 use App::git::ship::perl;
 
-my $app = App::git::ship::perl->new;
-
-use Mojo::File 'path';
-plan skip_all => 'Cannot be run with a version number' if path->basename =~ m!-\d+\.\d+$!;
-
+my $app       = App::git::ship::perl->new;
 my $dist_file = 'App-git-SHIP.tar.gz';
 my $found     = 0;
 
