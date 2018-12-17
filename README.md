@@ -4,7 +4,7 @@ App::git::ship - Git command for shipping your project
 
 # VERSION
 
-0.30
+0.31
 
 # SYNOPSIS
 
@@ -192,7 +192,7 @@ This method ships the project to some online repository. The default behavior
 is to make a new tag and push it to "origin". Push occurs only if origin is
 defined in git.
 
-## start 
+## start
 
     $ship->start;
 
