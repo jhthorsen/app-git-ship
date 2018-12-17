@@ -1,6 +1,8 @@
 use Test::More;
 use App::git::ship::perl;
 
+plan skip_all => "Cannot test on $^O" if $^O eq 'MSWin32';
+
 my $app       = App::git::ship::perl->new;
 my $dist_file = 'App-git-SHIP.tar.gz';
 my $found     = 0;
