@@ -83,7 +83,6 @@ sub ship {
   $self->SUPER::ship(@_);    # after all the changes
   $uploader->upload_file($dist_file);
   $self->run_hook('after_ship');
-  $self->clean;
 }
 
 sub start {
