@@ -108,7 +108,7 @@ sub start {
   $self->render_template('Changes') if $changelog eq 'Changes';
   $self->render_template('MANIFEST.SKIP');
   $self->render_template('t/00-basic.t');
-  $self->system(qw(git add cpanfile MANIFEST.SKIP t), $changelog);
+  $self->system(qw(git add .travis.yml cpanfile MANIFEST.SKIP t), $changelog);
   $self->system(qw(git commit --amend -C HEAD --allow-empty)) if @_;
   $self;
 }
