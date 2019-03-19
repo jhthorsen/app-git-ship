@@ -262,14 +262,14 @@ See L<App::git::ship::perl/SYNOPSIS> for how to build Perl projects.
 Below is a list of useful git aliases:
 
   # git build
-  $ git config --global alias.build = ship build
+  $ git config --global alias.build 'ship build'
 
   # git cl
-  $ git config --global alias.cl = ship clean
+  $ git config --global alias.cl 'ship clean'
 
   # git start
   # git start My/Project.pm
-  $ git config --global alias.start = ship start
+  $ git config --global alias.start 'ship start'
 
 =head1 DESCRIPTION
 
