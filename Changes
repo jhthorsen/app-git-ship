@@ -1,6 +1,6 @@
 Revision history for perl distribution App-git-ship
 
-0.32 Not Released
+0.32 2019-03-23T18:38:58+0800
  - Fix adding .travis.yml to the first commit
  - Fix bug in default .gitignore
  - Fix examples for git aliases
