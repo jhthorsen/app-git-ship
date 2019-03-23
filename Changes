@@ -2,6 +2,9 @@ Revision history for perl distribution App-git-ship
 
 0.32 Not Released
  - Fix adding .travis.yml to the first commit
+ - Fix bug in default .gitignore
+ - Fix examples for git aliases
+   Contributor: Rolf Stöckli
  - Add a default .perltidyrc when project is started
 
 0.31 2018-12-17T10:32:27+0900

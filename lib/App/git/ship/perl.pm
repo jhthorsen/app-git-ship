@@ -79,7 +79,8 @@ sub ship {
 
   $self->run_hook('before_ship');
   $self->system(qw(git add Makefile.PL), $changelog);
-  $self->system(qw(git commit -a -m),    $self->_changes_to_commit_message);
+  $self->system(qw(git add README.md)) if -e 'README.md';
+  $self->system(qw(git commit -a -m), $self->_changes_to_commit_message);
   $self->SUPER::ship(@_);    # after all the changes
   $uploader->upload_file($dist_file);
   $self->run_hook('after_ship');
@@ -615,7 +616,7 @@ __DATA__
 /local
 /Makefile
 /Makefile.old
-/MANIFEST$
+/MANIFEST
 /MANIFEST.bak
 /META*
 /MYMETA*
