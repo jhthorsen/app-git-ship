@@ -92,6 +92,12 @@ sub render_template {
     return $self;
   }
 
+  # Try to read template from $HOME/$name
+  if ($args->{template_from_home}) {
+    my $src = $ENV{HOME} ? path $ENV{HOME}, $name : undef $template->parse($file->slurp)
+      if $file and -r $file;
+  }
+
   $file->dirname->make_path unless -d $file->dirname;
   $file->spurt($template->process({%$args, ship => $self}));
   say "# Generated $file" unless SILENT;
@@ -162,7 +168,7 @@ sub system {
 sub _build_config {
   my $self = shift;
 
-  my $file = $ENV{GIT_SHIP_CONFIG} || '.ship.conf';
+  my $file   = $ENV{GIT_SHIP_CONFIG} || '.ship.conf';
   my $config = {};
   return $config unless open my $CFG, '<', $file;
 
@@ -184,7 +190,7 @@ sub _build_config {
 }
 
 sub _build_config_param_author {
-  my $self = shift;
+  my $self   = shift;
   my $format = shift || '%an <%ae>';
 
   open my $GIT, '-|', qw(git log), "--format=$format"
@@ -235,7 +241,7 @@ sub _get_template {
   my $str;
   no strict 'refs';
   for my $package ($class, @{"$class\::ISA"}) {
-    $str = Mojo::Loader::data_section($package, $name) or next;
+    $str  = Mojo::Loader::data_section($package, $name) or next;
     $name = "$package/$name";
     last;
   }

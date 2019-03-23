@@ -104,11 +104,12 @@ sub start {
 
   $self->SUPER::start(@_);
   $self->render_template('.travis.yml');
+  $self->render_template('.perltidyrc', {template_from_home => 1});
   $self->render_template('cpanfile');
   $self->render_template('Changes') if $changelog eq 'Changes';
   $self->render_template('MANIFEST.SKIP');
   $self->render_template('t/00-basic.t');
-  $self->system(qw(git add .travis.yml cpanfile MANIFEST.SKIP t), $changelog);
+  $self->system(qw(git add .perltidyrc .travis.yml cpanfile MANIFEST.SKIP t), $changelog);
   $self->system(qw(git commit --amend -C HEAD --allow-empty)) if @_;
   $self;
 }
@@ -122,7 +123,7 @@ sub test_coverage {
     );
   }
 
-  local $ENV{DEVEL_COVER_OPTIONS} = $ENV{DEVEL_COVER_OPTIONS} || '+ignore,^t\b';
+  local $ENV{DEVEL_COVER_OPTIONS}   = $ENV{DEVEL_COVER_OPTIONS} || '+ignore,^t\b';
   local $ENV{HARNESS_PERL_SWITCHES} = '-MDevel::Cover';
   $self->system(qw(cover -delete));
   $self->system(qw(prove -l));
@@ -152,7 +153,7 @@ sub _build_config_param_main_module_path {
   return path($ENV{GIT_SHIP_MAIN_MODULE_PATH}) if $ENV{GIT_SHIP_MAIN_MODULE_PATH};
 
   my @project_name = split /-/, path->basename;
-  my $path = path 'lib';
+  my $path         = path 'lib';
 
 PATH_PART:
   for my $p (@project_name) {
@@ -619,6 +620,20 @@ __DATA__
 /META*
 /MYMETA*
 /pm_to_blib
+@@ .perltidyrc
+-pbp     # Start with Perl Best Practices
+-w       # Show all warnings
+-iob     # Ignore old breakpoints
+-l=80    # 80 characters per line
+-mbl=2   # No more than 2 blank lines
+-i=2     # Indentation is 2 columns
+-ci=2    # Continuation indentation is 2 columns
+-vt=0    # Less vertical tightness
+-pt=2    # High parenthesis tightness
+-bt=2    # High brace tightness
+-sbt=2   # High square bracket tightness
+-wn      # Weld nested containers
+-isbc    # Don't indent comments without leading space
 @@ .travis.yml
 # Enable Travis Continuous Integration at https://travis-ci.org
 # Learn more https://docs.travis-ci.com
@@ -687,6 +702,7 @@ WriteMakefile(%WriteMakefileArgs);
 ^MANIFEST\.SKIP
 ^README\.md
 ^README\.pod
+^\.perltidyrc
 ^\.travis.yml
 @@ t/00-basic.t
 use Test::More;
