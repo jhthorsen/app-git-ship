@@ -3,12 +3,17 @@ use Mojo::Base 'App::git::ship';
 
 use Module::CPANfile;
 use Mojo::File qw(path tempfile);
+use Mojo::Util 'decode';
 use POSIX qw(setlocale strftime LC_TIME);
 use Pod::Markdown;
 
 use constant DEBUG => $ENV{GIT_SHIP_DEBUG} || 0;
 
-my $VERSION_RE = qr{\W*\b(\d+\.[\d_]+)\b};
+my $CONTRIB_END_RE        = qr{^=head1};
+my $CONTRIB_NAME_EMAIL_RE = qr{^(\w[\w\s]*\w) - C<(.+)>$};
+my $CONTRIB_NAME_RE       = qr{^(\w[\w\s]*\w)$};
+my $CONTRIB_START_RE      = qr{^=head1 AUTHOR};
+my $VERSION_RE            = qr{\W*\b(\d+\.[\d_]+)\b};
 
 sub build {
   my $self = shift;
@@ -143,6 +148,32 @@ sub update {
 
 sub _build_config_param_changelog_filename {
   (grep {-w} qw(CHANGELOG.md Changes))[0] || 'Changes';
+}
+
+sub _build_config_param_contributors {
+  my $self = shift;
+  return decode 'UTF-8', $ENV{GIT_SHIP_CONTRIBUTORS} if $ENV{GIT_SHIP_CONTRIBUTORS};
+
+  my @contributors;
+  my $module = decode 'UTF-8', $self->config('main_module_path')->slurp;
+  my $contrib_block;
+  for my $line (split /\n/, $module) {
+    if ($line =~ $CONTRIB_START_RE) {
+      $contrib_block = 1;
+      next;
+    }
+    $contrib_block = 0 if $line =~ $CONTRIB_END_RE;
+    next unless $contrib_block;
+
+    if ($line =~ $CONTRIB_NAME_EMAIL_RE) {
+      push @contributors, "$1 <$2>";
+    }
+    elsif ($line =~ $CONTRIB_NAME_RE) {
+      push @contributors, $1;
+    }
+  }
+
+  return join ',', @contributors;
 }
 
 sub _build_config_param_new_version_format {
