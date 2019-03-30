@@ -41,7 +41,7 @@ sub config {
     return $self->$param_method if $self->can($param_method);
 
     my $env_key = uc "GIT_SHIP_$key";
-    return $ENV{$env_key} // '';
+    return decode 'UTF-8', $ENV{$env_key} // '';
   }
 
   # Set single key
@@ -171,7 +171,7 @@ sub _build_config {
 
   my $file   = $ENV{GIT_SHIP_CONFIG} || '.ship.conf';
   my $config = {};
-  return $config unless open my $CFG, '<', $file;
+  return $config unless open my $CFG, '<:encoding(UTF-8)', $file;
 
   while (<$CFG>) {
     chomp;
@@ -341,6 +341,10 @@ This class is used to build the object that runs all the actions on your
 project. This is autodetected by looking at the structure and files in
 your project. For now this value can be L<App::git::ship> or
 L<App::git::ship::perl>, but any customization is allowed.
+
+=head2 GIT_SHIP_CONTRIBUTORS
+
+Comma-separated list with C<< name <email> >> of the contributors to this project.
 
 =head2 GIT_SHIP_DEBUG
 

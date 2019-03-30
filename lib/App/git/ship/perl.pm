@@ -254,6 +254,7 @@ sub _render_makefile_pl {
   $args->{BUILD_REQUIRES} = $r;
   $r                      = $prereqs->requirements_for(qw(test requires))->as_string_hash;
   $args->{TEST_REQUIRES}  = $r;
+  $args->{CONTRIBUTORS}   = [split /,\s*/, $self->config('contributors')];
 
   $self->render_template('Makefile.PL', $args);
   $self->system(qw(perl -c Makefile.PL));    # test Makefile.PL
@@ -687,6 +688,7 @@ my %WriteMakefileArgs = (
         web  => '<%= $ship->config('homepage') %>',
       },
     },
+    'x_contributors' => <%= $ship->dump($CONTRIBUTORS) %>,
   },
   test => {TESTS => (-e 'META.yml' ? 't/*.t' : 't/*.t xt/*.t')},
 );
