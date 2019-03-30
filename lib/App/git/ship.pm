@@ -7,6 +7,7 @@ use IPC::Run3    ();
 use Mojo::File 'path';
 use Mojo::Loader;
 use Mojo::Template;
+use Mojo::Util qw(decode encode);
 
 use constant DEBUG  => $ENV{GIT_SHIP_DEBUG}  || 0;
 use constant SILENT => $ENV{GIT_SHIP_SILENT} || 0;
@@ -99,7 +100,7 @@ sub render_template {
   }
 
   $file->dirname->make_path unless -d $file->dirname;
-  $file->spurt($template->process({%$args, ship => $self}));
+  $file->spurt(encode 'UTF-8', $template->process({%$args, ship => $self}));
   say "# Generated $file" unless SILENT;
   return $self;
 }
@@ -195,7 +196,7 @@ sub _build_config_param_author {
 
   open my $GIT, '-|', qw(git log), "--format=$format"
     or $self->abort("git log --format=$format: $!");
-  my $author = readline $GIT;
+  my $author = decode 'UTF-8', readline $GIT;
   $self->abort("Could not find any author in git log") unless $author;
   chomp $author;
   warn "[ship::author] $format = $author\n" if DEBUG;
