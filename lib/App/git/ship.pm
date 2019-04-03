@@ -12,7 +12,7 @@ use Mojo::Util qw(decode encode);
 use constant DEBUG  => $ENV{GIT_SHIP_DEBUG}  || 0;
 use constant SILENT => $ENV{GIT_SHIP_SILENT} || 0;
 
-our $VERSION = '0.32';
+our $VERSION = '0.33';
 
 # Need to be overridden in subclass
 sub build { $_[0]->abort('build() is not available for %s', ref $_[0]) }
@@ -260,7 +260,7 @@ App::git::ship - Git command for shipping your project
 
 =head1 VERSION
 
-0.32
+0.33
 
 =head1 SYNOPSIS
 
@@ -494,6 +494,12 @@ the terms of the Artistic License version 2.0.
 =head1 AUTHOR
 
 Jan Henning Thorsen - C<jhthorsen@cpan.org>
+
+mohawk2 - C<mohawk2@users.noreply.github.com>
+
+Rolf Stöckli - C<tekki@cpan.org>.
+
+Shoichi Kaji - C<skaji@cpan.org>
 
 =cut
 
