@@ -425,11 +425,11 @@ Note that the C<cpanfile> is optional and C<Makefile.PL> will be kept untouched
 unless C<cpanfile> exists.
 
 "NAME" and "LICENSE" will have values from L</GIT_SHIP_PROJECT_NAME> and
-L</GIT_SHIP_LICENSE>.  "AUTHOR" will have the name and email from
-L</GIT_SHIP_AUTHOR> or the last git committer.  "ABSTRACT_FROM" and
+L<App::git::ship/GIT_SHIP_LICENSE>.  "AUTHOR" will have the name and email from
+L<App::git::ship/GIT_SHIP_AUTHOR> or the last git committer.  "ABSTRACT_FROM" and
 "VERSION_FROM" are fetched from the L<App::git::ship::perl/main_module_path>.
 "EXE_FILES" will be the files in C<bin/> and C<script/> which are executable.
-"META_MERGE" will use data from L</GIT_SHIP_BUGTRACKER>, L</GIT_SHIP_HOMEPAGE>,
+"META_MERGE" will use data from L<App::git::ship/GIT_SHIP_BUGTRACKER>, L<App::git::ship/GIT_SHIP_HOMEPAGE>,
 and L</repository>.
 
 =item * my-app/Changes or my-app/CHANGELOG.md
