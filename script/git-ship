@@ -1,26 +1,42 @@
 #!/usr/bin/env perl
 use Applify;
 use App::git::ship;
+use Mojo::Util 'monkey_patch';
 
 documentation 'App::git::ship';
 version 'App::git::ship';
 
+subcommand build    => 'Build the project'          => _applify('build');
+subcommand clean    => 'Clean unwanted files'       => _applify('clean');
+subcommand coverage => 'Test coverage'              => _applify('test_coverage');
+subcommand start    => 'Start a project'            => sub { };
+subcommand upload   => 'Upload project to git/cpan' => _applify('ship');
+
+sub _applify {
+  my ($method) = shift;
+  return sub {
+    my $applify = shift;
+    my $class   = App::git::ship->new->detect;
+    my $subcmd  = $applify->documentation($class)->extends($class)->subcommand;
+
+    monkey_patch $class, "command_$subcmd" => sub {
+      shift->$method(@_);
+      return 0;
+    };
+  };
+}
+
+sub command_start {
+  my $self = shift;
+  App::git::ship->new->start(@_);
+  return 0;
+}
+
+
 app {
-  my $self   = shift;
-  my $action = shift || 'ship';
-  my $ship   = App::git::ship->new;
-
-  $action =~ s/-/_/g;
-
-  if ($action eq 'start') {
-    $ship->start(@_);
-  }
-  else {
-    $ship = $ship->detect->new;
-    $ship->config;
-    $ship->abort("Unknown action: $action") if $action !~ /^[a-z_]+$/ or !$ship->can($action);
-    $ship->$action(@_);
-  }
-
+  my $self = shift;
+  my $ship = App::git::ship->new->detect->new;
+  $ship->config;
+  $ship->ship(@_);
   return 0;
 };

@@ -1,7 +1,7 @@
 package App::git::ship;
 use Mojo::Base -base;
 
-use Carp;
+use Carp         ();
 use Data::Dumper ();
 use IPC::Run3    ();
 use Mojo::File 'path';
@@ -169,7 +169,7 @@ sub system {
 sub _build_config {
   my $self = shift;
 
-  my $file   = $ENV{GIT_SHIP_CONFIG} || '.ship.conf';
+  my $file = $ENV{GIT_SHIP_CONFIG} || '.ship.conf';
   my $config = {};
   return $config unless open my $CFG, '<:encoding(UTF-8)', $file;
 
@@ -191,7 +191,7 @@ sub _build_config {
 }
 
 sub _build_config_param_author {
-  my $self   = shift;
+  my $self = shift;
   my $format = shift || '%an <%ae>';
 
   open my $GIT, '-|', qw(git log), "--format=$format"
@@ -242,7 +242,7 @@ sub _get_template {
   my $str;
   no strict 'refs';
   for my $package ($class, @{"$class\::ISA"}) {
-    $str  = Mojo::Loader::data_section($package, $name) or next;
+    $str = Mojo::Loader::data_section($package, $name) or next;
     $name = "$package/$name";
     last;
   }
