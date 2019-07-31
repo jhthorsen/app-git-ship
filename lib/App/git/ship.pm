@@ -113,7 +113,7 @@ sub run_hook {
 
 sub ship {
   my $self     = shift;
-  my ($branch) = qx(git branch) =~ /\* (.+)$/m;
+  my ($branch) = qx(git branch --no-color) =~ /\* (.+)$/m;
   my ($remote) = qx(git remote -v) =~ /^origin\s+(.+)\s+\(push\)$/m;
 
   $self->abort("Cannot ship without a current branch") unless $branch;
