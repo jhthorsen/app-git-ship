@@ -497,7 +497,7 @@ Jan Henning Thorsen - C<jhthorsen@cpan.org>
 
 mohawk2 - C<mohawk2@users.noreply.github.com>
 
-Rolf Stöckli - C<tekki@cpan.org>.
+Rolf Stöckli - C<tekki@cpan.org>
 
 Shoichi Kaji - C<skaji@cpan.org>
 

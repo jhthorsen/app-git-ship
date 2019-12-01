@@ -231,6 +231,18 @@ sub _changes_to_commit_message {
   return "@message";
 }
 
+sub _c_objects {
+  my $self = shift;
+  my @files;
+
+  for my $d (qw(.)) {
+    push @files,
+      path($d)->list->grep(sub {/\.c|\.xs/})->map(sub { $_->basename('.c', '.xs') . '.o' })->each;
+  }
+
+  return @files;
+}
+
 sub _dist_files {
   my $self = shift;
   my $name = $self->config('project_name') =~ s!::!-!gr;
@@ -639,6 +651,7 @@ __DATA__
 @@ .gitignore
 ~$
 *.bak
+*.o
 *.old
 *.swp
 /*.tar.gz
@@ -704,6 +717,7 @@ my %WriteMakefileArgs = (
   ABSTRACT_FROM  => '<%= $ship->config('main_module_path') %>',
   VERSION_FROM   => '<%= $ship->config('main_module_path') %>',
   EXE_FILES      => [qw(<%= join ' ', $ship->_exe_files %>)],
+  OBJECT         => '<%= join ' ', $ship->_c_objects %>',
   BUILD_REQUIRES => <%= $ship->dump($BUILD_REQUIRES) %>,
   TEST_REQUIRES  => <%= $ship->dump($TEST_REQUIRES) %>,
   PREREQ_PM      => <%= $ship->dump($PREREQ_PM) %>,
