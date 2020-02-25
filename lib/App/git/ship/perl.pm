@@ -28,7 +28,7 @@ sub build {
   $self->_update_version_info;
   $self->_render_readme;
   $self->_make('manifest');
-  $self->_make('dist');
+  $self->_make('dist', '-e');
   $self->run_hook('after_build');
   $self;
 }
